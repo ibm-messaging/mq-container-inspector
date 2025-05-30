@@ -1,0 +1,12 @@
+package mustgather
+
+import (
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"k8s.io/client-go/rest"
+)
+
+func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
+
+	return nil
+
+}
