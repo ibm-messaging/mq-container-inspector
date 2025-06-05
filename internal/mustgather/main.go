@@ -7,6 +7,12 @@ import (
 
 func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 
+	// collect pods must-gathers
+	err := gatherPodsToFiles(cfg, flags)
+	if err != nil {
+		return err
+	}
+
 	return nil
 
 }

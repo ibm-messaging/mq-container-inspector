@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -31,4 +32,8 @@ func CreateNewDiscoveryClient(cfg *rest.Config) (*discovery.DiscoveryClient, err
 
 	return discoveryClient, nil
 
+}
+
+func BuildKubernetesClientFromConfig(cfg *rest.Config) *kubernetes.Clientset {
+	return kubernetes.NewForConfigOrDie(cfg)
 }

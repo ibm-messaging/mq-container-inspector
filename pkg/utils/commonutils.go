@@ -1,7 +1,11 @@
 package utils
 
 import (
+	"fmt"
+	"strings"
 	"time"
+
+	"k8s.io/client-go/rest"
 )
 
 type MustGatherFlags struct {
@@ -15,4 +19,17 @@ type MustGatherFlags struct {
 
 var GetCurrentTimestamp = func(timeFormat string) string {
 	return time.Now().Format(timeFormat)
+}
+
+type PodLogs struct {
+	PreviousPodLogsRequest *rest.Request
+	CurrentPodLogsRequest  *rest.Request
+}
+
+var FetchQMGRResourceNameFromSelector = func(selector string) (string, error) {
+	if index := strings.Index(selector, "="); index != -1 {
+		return selector[index+1:], nil
+	}
+
+	return "", fmt.Errorf("Error, invalid selector format: %s", selector)
 }
