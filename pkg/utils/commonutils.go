@@ -31,5 +31,5 @@ var FetchQMGRResourceNameFromSelector = func(selector string) (string, error) {
 		return selector[index+1:], nil
 	}
 
-	return "", fmt.Errorf("Error, invalid selector format: %s", selector)
+	return "", fmt.Errorf("error invalid selector format: %s", selector)
 }

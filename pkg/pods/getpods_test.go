@@ -34,7 +34,7 @@ func TestGetPodsBySelector(t *testing.T) {
 
 	result, err := GetPodsBySelector(fakeClient, selector, namespace)
 	if err != nil {
-		t.Errorf("Error, fetching pods by selector: %v", err)
+		t.Errorf("error fetching pods by selector: %v", err)
 	}
 
 	if got := len(result); got != expectedPodCount {
@@ -60,7 +60,7 @@ func TestGetPodLogsBySelector(t *testing.T) {
 
 	result, err := GetPodLogsBySelector(fakeClient, selector, namespace, "qmgr")
 	if err != nil {
-		t.Errorf("Error, fetching pods logs by selector: %v", err)
+		t.Errorf("error fetching pods logs by selector: %v", err)
 	}
 
 	// check if the got and expected podcount's match
@@ -71,7 +71,7 @@ func TestGetPodLogsBySelector(t *testing.T) {
 	// check if the got and expected names match
 	for _, expectedPodName := range expectedPodNames {
 		if _, ok := result[expectedPodName]; !ok {
-			t.Errorf("Error, expected pod %q to be a key in result map, but it was missing", expectedPodName)
+			t.Errorf("error expected pod %q to be a key in result map, but it was missing", expectedPodName)
 		}
 	}
 }
@@ -94,7 +94,7 @@ func TestGetPodEventsBySelector(t *testing.T) {
 
 	result, err := GetPodEventsBySelector(fakeClient, selector, namespace)
 	if err != nil {
-		t.Errorf("Error, fetching pods events by selector: %v", err)
+		t.Errorf("error fetching pods events by selector: %v", err)
 	}
 
 	// check if the got and expected podcount's match
@@ -105,7 +105,7 @@ func TestGetPodEventsBySelector(t *testing.T) {
 	// check if the got and expected names match
 	for _, expectedPodName := range expectedPodNames {
 		if _, ok := result[expectedPodName]; !ok {
-			t.Errorf("Error, expected pod %q to be a key in result map, but it was missing", expectedPodName)
+			t.Errorf("error expected pod %q to be a key in result map, but it was missing", expectedPodName)
 		}
 	}
 
@@ -117,12 +117,12 @@ func getExpectedPodCountFromFakeCoreClient() (int, corev1.PodList, error) {
 
 	coreClient, err := test.NewFakeCoreClientBySelector(selector, namespace)
 	if err != nil {
-		return 0, expectedPodList, fmt.Errorf("Error creating a new fake core client: %v", err)
+		return 0, expectedPodList, fmt.Errorf("error creating a new fake core client: %v", err)
 	}
 
 	labelSelector, err := labels.Parse(selector)
 	if err != nil {
-		return 0, expectedPodList, fmt.Errorf("Error, while parsing label selector: %s", labelSelector)
+		return 0, expectedPodList, fmt.Errorf("error while parsing label selector: %s", labelSelector)
 	}
 
 	err = coreClient.List(context.TODO(), &expectedPodList, &client.ListOptions{
@@ -130,7 +130,7 @@ func getExpectedPodCountFromFakeCoreClient() (int, corev1.PodList, error) {
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
-		return 0, expectedPodList, fmt.Errorf("Error, while fetching pods from fake client %v", err)
+		return 0, expectedPodList, fmt.Errorf("error while fetching pods from fake client %v", err)
 	}
 
 	return len(expectedPodList.Items), expectedPodList, nil

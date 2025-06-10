@@ -16,7 +16,7 @@ func MustGather(args []string) error {
 	// create flagset for "mustgather" os arg, and parse the args
 	flags, err := parseFlags(args)
 	if err != nil {
-		return fmt.Errorf("Error, parsing mustgather flags: %v\n", err)
+		return fmt.Errorf("error parsing mustgather flags: %v\n", err)
 	}
 
 	// handle non-required flag defaults
@@ -27,11 +27,11 @@ func MustGather(args []string) error {
 	// generate the kubernetes config
 	cfg, err := kubeclient.BuildKubeConfig(flags.KubeconfigPath)
 	if err != nil {
-		return fmt.Errorf("Error, building kube-config: %v\n", err)
+		return fmt.Errorf("error building kube-config: %v\n", err)
 	}
 
 	if err := mustgather.MustGather(cfg, flags); err != nil {
-		return fmt.Errorf("Error, running must gather: %v\n", err)
+		return fmt.Errorf("error running must gather: %v\n", err)
 	}
 
 	return nil
@@ -63,7 +63,7 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 	// validate if required flags have been passed
 	if !validateRequiredFlags(flags) {
 		flagSet.Usage()
-		return flags, fmt.Errorf("Error, required flags are missing")
+		return flags, fmt.Errorf("error required flags are missing")
 	}
 
 	return flags, nil
@@ -75,7 +75,7 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 	if flags.KubeconfigPath == "" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			return fmt.Errorf("Error retrieving user's home directory: %v", err)
+			return fmt.Errorf("error retrieving user's home directory: %v", err)
 		}
 		flags.KubeconfigPath = filepath.Join(homeDir, ".kube/config")
 	}
@@ -83,11 +83,19 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 	if flags.OutputDir == "" {
 		currentWorkingDir, err := os.Getwd()
 		if err != nil {
-			return fmt.Errorf("Error, getting user's current working directory: %v", err)
+			return fmt.Errorf("error getting user's current working directory: %v", err)
 		}
 
 		timestamp := utils.GetCurrentTimestamp(utils.TimestampFormat)
 		flags.OutputDir = filepath.Join(currentWorkingDir, fmt.Sprintf("Must_Gather_%v", timestamp))
+	}
+
+	// If OutputDir doesnot exist create the directory
+	if _, err := os.Stat(flags.OutputDir); os.IsNotExist(err) {
+		err = os.Mkdir(flags.OutputDir, 0755)
+		if err != nil {
+			return fmt.Errorf("error creating output-directory(%s): %v", flags.OutputDir, err)
+		}
 	}
 
 	return nil
