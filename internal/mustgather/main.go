@@ -13,6 +13,12 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return err
 	}
 
+	// collect crd must-gathers
+	err = gatherCrdToFiles(cfg, flags)
+	if err != nil {
+		return err
+	}
+
 	return nil
 
 }

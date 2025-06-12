@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -32,4 +33,9 @@ var FetchQMGRResourceNameFromSelector = func(selector string) (string, error) {
 	}
 
 	return "", fmt.Errorf("error invalid selector format: %s", selector)
+}
+
+var FormatFilePath = func(outputDir, fileNameFormat string, args ...interface{}) string {
+	filename := fmt.Sprintf(fileNameFormat, args...)
+	return filepath.Join(outputDir, filename)
 }

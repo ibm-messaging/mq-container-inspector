@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"text/tabwriter"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 //   - outputDir:      the directory in which the details file will be created.
 func WritePodDetailsToFile(podList []corev1.Pod, fileNameFormat, outputDir string) error {
 
-	fileName := formatFilePath(outputDir, fileNameFormat)
+	fileName := utils.FormatFilePath(outputDir, fileNameFormat)
 
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -69,7 +68,7 @@ func WritePodDetailsToFile(podList []corev1.Pod, fileNameFormat, outputDir strin
 func WritePodYamlsToFile(podList []corev1.Pod, fileNameFormat, outputDir string) error {
 
 	for _, pod := range podList {
-		fileName := formatFilePath(outputDir, fileNameFormat, pod.Name)
+		fileName := utils.FormatFilePath(outputDir, fileNameFormat, pod.Name)
 
 		data, err := yaml.Marshal(pod)
 		if err != nil {
@@ -96,7 +95,7 @@ func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, out
 		var fileName string
 
 		if podLog.PreviousPodLogsRequest != nil {
-			fileName = formatFilePath(outputDir, fileNameFormat, podName, "previous")
+			fileName = utils.FormatFilePath(outputDir, fileNameFormat, podName, "previous")
 
 			prevLogFile, err := os.Create(fileName)
 			if err != nil {
@@ -117,7 +116,7 @@ func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, out
 
 		}
 
-		fileName = formatFilePath(outputDir, fileNameFormat, podName, "current")
+		fileName = utils.FormatFilePath(outputDir, fileNameFormat, podName, "current")
 
 		curLogFile, err := os.Create(fileName)
 		if err != nil {
@@ -150,7 +149,7 @@ func WritePodDescribeLogsToFile(podDescribeLogsMap map[string]string, fileNameFo
 
 	for podName, podDescribeLogs := range podDescribeLogsMap {
 
-		fileName := formatFilePath(outputDir, fileNameFormat, podName)
+		fileName := utils.FormatFilePath(outputDir, fileNameFormat, podName)
 
 		if err := os.WriteFile(fileName, []byte(podDescribeLogs), 0660); err != nil {
 			return fmt.Errorf("error while writing %s pod describe logs to file %s: %v", podName, fileName, err)
@@ -171,7 +170,7 @@ func WritePodEventsToFile(podEventMap map[string][]corev1.Event, fileNameFormat,
 
 	for podName, podEvents := range podEventMap {
 
-		fileName := formatFilePath(outputDir, fileNameFormat, podName)
+		fileName := utils.FormatFilePath(outputDir, fileNameFormat, podName)
 
 		file, err := os.Create(fileName)
 		if err != nil {
@@ -262,9 +261,4 @@ func getPodAge(podCreationTime time.Time) string {
 	default:
 		return fmt.Sprintf("%ds", seconds)
 	}
-}
-
-func formatFilePath(outputDir, fileNameFormat string, args ...interface{}) string {
-	filename := fmt.Sprintf(fileNameFormat, args...)
-	return filepath.Join(outputDir, filename)
 }

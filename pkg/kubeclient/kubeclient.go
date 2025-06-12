@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -36,4 +37,8 @@ func CreateNewDiscoveryClient(cfg *rest.Config) (*discovery.DiscoveryClient, err
 
 func BuildKubernetesClientFromConfig(cfg *rest.Config) *kubernetes.Clientset {
 	return kubernetes.NewForConfigOrDie(cfg)
+}
+
+func BuildKubernetesDynamicClientFromConfig(cfg *rest.Config) *dynamic.DynamicClient {
+	return dynamic.NewForConfigOrDie(cfg)
 }

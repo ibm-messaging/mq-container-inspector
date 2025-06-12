@@ -15,3 +15,11 @@ const KindPod = "Pod"
 const KindList = "List"
 
 const KindStatefulSet = "StatefulSet"
+
+const KindQueueManager = "Queuemanager"
+
+const QmgrGroup = "mq.ibm.com"
+
+const QmgrVersion = "v1beta1"
+
+const QmgrResource = "queuemanagers"
