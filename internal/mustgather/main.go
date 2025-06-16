@@ -19,6 +19,12 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return err
 	}
 
+	// collect the route must-gathers
+	err = gatherRoutesToFiles(cfg, flags)
+	if err != nil {
+		return err
+	}
+
 	return nil
 
 }

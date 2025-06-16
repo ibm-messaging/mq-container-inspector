@@ -10,6 +10,8 @@ const ApiVersionV1 = "v1"
 
 const ApiVersionAppsV1 = "apps/v1"
 
+const APIVersionRouteV1 = "route.openshift.io/v1"
+
 const KindPod = "Pod"
 
 const KindList = "List"
@@ -18,8 +20,14 @@ const KindStatefulSet = "StatefulSet"
 
 const KindQueueManager = "Queuemanager"
 
+const KindRoute = "Route"
+
+const KindService = "Service"
+
 const QmgrGroup = "mq.ibm.com"
 
 const QmgrVersion = "v1beta1"
 
 const QmgrResource = "queuemanagers"
+
+const RouteAPIGroupName = "route.openshift.io"

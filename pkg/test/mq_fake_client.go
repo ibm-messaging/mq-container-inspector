@@ -3,6 +3,8 @@ package test
 import (
 	"fmt"
 
+	routeV1 "github.com/openshift/api/route/v1"
+	routefake "github.com/openshift/client-go/route/clientset/versioned/fake"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -11,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,6 +28,7 @@ func buildNewScheme() *runtime.Scheme {
 	appsv1.AddToScheme(scheme)
 	storagev1.AddToScheme(scheme)
 	corev1.AddToScheme(scheme)
+	routeV1.AddToScheme(scheme)
 
 	// register QueueManager CRD
 	queueManagerGV := schema.GroupVersion{
@@ -144,7 +148,7 @@ func newFakeQueueManagerCrdBySelector(selector, namespace string) (*unstructured
 				},
 				"version": "9.4.3.0-r1",
 				"web": map[string]interface{}{
-					"enabled": false,
+					"enabled": true,
 				},
 			},
 		},
@@ -156,6 +160,90 @@ func newFakeQueueManagerCrdBySelector(selector, namespace string) (*unstructured
 	})
 
 	return queueManagerCrd, nil
+}
+
+func newFakeRoutesBySelector(selector, namespace string) ([]controllerruntimeclient.Object, error) {
+
+	queueManagerName, err := utils.FetchQMGRResourceNameFromSelector(selector)
+	if err != nil {
+		return nil, err
+	}
+
+	qmRouteName := fmt.Sprintf("%s-ibm-mq-qm", queueManagerName)
+	webRouteName := fmt.Sprintf("%s-ibm-mq-web", queueManagerName)
+	ownerReferenceControllerAndDeletionRule := true
+	routeTargetServiceWeight := int32(100)
+
+	qmRoute := &routeV1.Route{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      qmRouteName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/instance": queueManagerName,
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         fmt.Sprintf("%s/%s", utils.QmgrGroup, utils.QmgrVersion),
+					Kind:               utils.KindQueueManager,
+					Name:               queueManagerName,
+					Controller:         &ownerReferenceControllerAndDeletionRule,
+					BlockOwnerDeletion: &ownerReferenceControllerAndDeletionRule,
+				},
+			},
+		},
+		Spec: routeV1.RouteSpec{
+			Host: fmt.Sprintf("%s.sample-host.ibm.com", qmRouteName),
+			To: routeV1.RouteTargetReference{
+				Kind:   utils.KindService,
+				Name:   fmt.Sprintf("%s-ibm-mq", queueManagerName),
+				Weight: &routeTargetServiceWeight,
+			},
+			Port: &routeV1.RoutePort{
+				TargetPort: intstr.FromInt(1414),
+			},
+			TLS: &routeV1.TLSConfig{
+				Termination: routeV1.TLSTerminationPassthrough,
+			},
+			WildcardPolicy: routeV1.WildcardPolicyNone,
+		},
+	}
+
+	webRoute := &routeV1.Route{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      webRouteName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/instance": queueManagerName,
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         fmt.Sprintf("%s/%s", utils.QmgrGroup, utils.QmgrVersion),
+					Kind:               utils.KindQueueManager,
+					Name:               queueManagerName,
+					Controller:         &ownerReferenceControllerAndDeletionRule,
+					BlockOwnerDeletion: &ownerReferenceControllerAndDeletionRule,
+				},
+			},
+		},
+		Spec: routeV1.RouteSpec{
+			Host: fmt.Sprintf("%s-sample-host.ibm.mq", webRouteName),
+			To: routeV1.RouteTargetReference{
+				Kind:   utils.KindService,
+				Name:   fmt.Sprintf("%s-ibm-mq", queueManagerName),
+				Weight: &routeTargetServiceWeight,
+			},
+			Port: &routeV1.RoutePort{
+				TargetPort: intstr.FromInt(9443),
+			},
+			TLS: &routeV1.TLSConfig{
+				Termination: routeV1.TLSTerminationPassthrough,
+			},
+			WildcardPolicy: routeV1.WildcardPolicyNone,
+		},
+	}
+
+	return []controllerruntimeclient.Object{qmRoute, webRoute}, nil
+
 }
 
 func NewFakeCoreClientBySelector(selector, namespace string) (controllerruntimeclient.Client, error) {
@@ -187,5 +275,22 @@ func NewFakeDynamicClientBySelector(selector, namespace string) (*dynamicfake.Fa
 	}
 
 	return dynamicfake.NewSimpleDynamicClient(scheme, queueManagerCrdObj), nil
+
+}
+
+func NewFakeRouteClientBySelector(selector, namespace string) (*routefake.Clientset, error) {
+
+	routeObjs, err := newFakeRoutesBySelector(selector, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	// register routes
+	var runtimeObjects []runtime.Object
+	for _, routeObj := range routeObjs {
+		runtimeObjects = append(runtimeObjects, routeObj)
+	}
+
+	return routefake.NewSimpleClientset(runtimeObjects...), nil
 
 }

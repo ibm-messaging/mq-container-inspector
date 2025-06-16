@@ -13,7 +13,10 @@ import (
 func gatherPodsToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
 
 	// build the kubernetes client from config
-	client := kubeclient.BuildKubernetesClientFromConfig(cfg)
+	client, err := kubeclient.BuildKubernetesClientFromConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("error building kubernetes client: %v", err)
+	}
 
 	// check if QueueManager and MQ Operator namespace exists
 	if namespaceName, err := namespace.CheckIfNamespacesExist(client, flags.QueueManagerNamespace, flags.OperatorNamespace); err != nil {

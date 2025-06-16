@@ -12,7 +12,10 @@ import (
 func gatherCrdToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
 
 	// build the kubernetes dynamic client from config
-	dynamicClient := kubeclient.BuildKubernetesDynamicClientFromConfig(cfg)
+	dynamicClient, err := kubeclient.BuildKubernetesDynamicClientFromConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("error building dynamic client: %v", err)
+	}
 
 	// get QueueManager details by QueueManager name
 	queueManagerDetailsMap, err := crd.GetQueueManagerCrdDetailsByName(dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace)

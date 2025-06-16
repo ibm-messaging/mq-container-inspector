@@ -3,6 +3,7 @@ package kubeclient
 import (
 	"fmt"
 
+	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -24,21 +25,18 @@ func BuildKubeConfig(kubeconfigPath string) (*rest.Config, error) {
 	return cfg, nil
 }
 
-func CreateNewDiscoveryClient(cfg *rest.Config) (*discovery.DiscoveryClient, error) {
-
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return discoveryClient, nil
-
+func BuildDiscoveryClientFromConfig(cfg *rest.Config) (*discovery.DiscoveryClient, error) {
+	return discovery.NewDiscoveryClientForConfig(cfg)
 }
 
-func BuildKubernetesClientFromConfig(cfg *rest.Config) *kubernetes.Clientset {
-	return kubernetes.NewForConfigOrDie(cfg)
+func BuildKubernetesClientFromConfig(cfg *rest.Config) (*kubernetes.Clientset, error) {
+	return kubernetes.NewForConfig(cfg)
 }
 
-func BuildKubernetesDynamicClientFromConfig(cfg *rest.Config) *dynamic.DynamicClient {
-	return dynamic.NewForConfigOrDie(cfg)
+func BuildKubernetesDynamicClientFromConfig(cfg *rest.Config) (*dynamic.DynamicClient, error) {
+	return dynamic.NewForConfig(cfg)
+}
+
+func BuildRouteClientFromConfig(cfg *rest.Config) (*routeClient.Clientset, error) {
+	return routeClient.NewForConfig(cfg)
 }
