@@ -142,9 +142,9 @@ func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, out
 
 // WritePodDescribeLogsToFile writes each pod’s describe logs to their respective files.
 // Parameters:
-//   - podList:        the list of pods whose details will be written.
-//   - fileNameFormat: the format string used to name each file; must contain one "%s", which will be replaced by the pod name.
-//   - outputDir:      the directory in which the YAML files will be created.
+//   - podDescribeLogsMap:  the map of pod names to their describe logs, which will be written.
+//   - fileNameFormat:      the format string used to name each file; must contain one "%s", which will be replaced by the pod name.
+//   - outputDir:           the directory in which the YAML files will be created.
 func WritePodDescribeLogsToFile(podDescribeLogsMap map[string]string, fileNameFormat, outputDir string) error {
 
 	for podName, podDescribeLogs := range podDescribeLogsMap {
@@ -163,7 +163,7 @@ func WritePodDescribeLogsToFile(podDescribeLogsMap map[string]string, fileNameFo
 
 // WritePodEventsToFile writes each pod’s events to their respective files.
 // Parameters:
-//   - podList:        the list of pods whose details will be written.
+//   - podEventMap:    the map of pod names to their events, which will be written.
 //   - fileNameFormat: the format string used to name each file; must contain one "%s", which will be replaced by the pod name.
 //   - outputDir:      the directory in which the YAML files will be created.
 func WritePodEventsToFile(podEventMap map[string][]corev1.Event, fileNameFormat, outputDir string) error {

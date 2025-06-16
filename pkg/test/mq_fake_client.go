@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,14 +48,14 @@ func buildNewScheme() *runtime.Scheme {
 func newFakePodsBySelector(selector, namespace string) ([]controllerruntimeclient.Object, error) {
 
 	// fetch the qm-instance name from the selector
-	qmName, err := utils.FetchQMGRResourceNameFromSelector(selector)
+	queueManagerName, err := utils.FetchQMGRResourceNameFromSelector(selector)
 	if err != nil {
 		return nil, err
 	}
 
 	var pods []controllerruntimeclient.Object
 	for i := 0; i < 3; i++ {
-		podName := fmt.Sprintf("%s-ibm-mq-%d", qmName, i)
+		podName := fmt.Sprintf("%s-ibm-mq-%d", queueManagerName, i)
 		ownerReferenceControllerAndDeletionRule := true
 
 		pod := &corev1.Pod{
@@ -62,13 +63,13 @@ func newFakePodsBySelector(selector, namespace string) ([]controllerruntimeclien
 				Name:      podName,
 				Namespace: namespace,
 				Labels: map[string]string{
-					"app.kubernetes.io/instance": qmName,
+					"app.kubernetes.io/instance": queueManagerName,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion:         utils.ApiVersionAppsV1,
 						Kind:               utils.KindStatefulSet,
-						Name:               fmt.Sprintf("%s-ibm-mq", qmName),
+						Name:               fmt.Sprintf("%s-ibm-mq", queueManagerName),
 						Controller:         &ownerReferenceControllerAndDeletionRule,
 						BlockOwnerDeletion: &ownerReferenceControllerAndDeletionRule,
 					},
@@ -111,6 +112,140 @@ func newFakePodsBySelector(selector, namespace string) ([]controllerruntimeclien
 	}
 
 	return pods, nil
+
+}
+
+func newFakeStatefulSetBySelector(selector, namespace string) (controllerruntimeclient.Object, error) {
+
+	// fetch the qm-instance name from the selector
+	queueManagerName, err := utils.FetchQMGRResourceNameFromSelector(selector)
+	if err != nil {
+		return nil, err
+	}
+
+	statefulSetName := fmt.Sprintf("%s-ibm-mq", queueManagerName)
+	ownerReferenceControllerAndDeletionRule := true
+	replicas := int32(3)
+
+	statefulSet := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      statefulSetName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/instance": queueManagerName,
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         fmt.Sprintf("%s/%s", utils.QmgrGroup, utils.QmgrVersion),
+					Kind:               utils.KindQueueManager,
+					Name:               queueManagerName,
+					Controller:         &ownerReferenceControllerAndDeletionRule,
+					BlockOwnerDeletion: &ownerReferenceControllerAndDeletionRule,
+				},
+			},
+		},
+		Spec: appsv1.StatefulSetSpec{
+			PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+				WhenDeleted: appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+				WhenScaled:  appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/instance": queueManagerName,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "qmgr",
+							Image: "cp.icr.io/cp/ibm-mqadvanced-server",
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: 1414,
+									Protocol:      corev1.ProtocolTCP,
+								},
+								{
+									ContainerPort: 9157,
+									Protocol:      corev1.ProtocolTCP,
+								},
+							},
+						},
+					},
+				},
+			},
+			Replicas: &replicas,
+			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+				Type: appsv1.RollingUpdateStatefulSetStrategyType,
+			},
+			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
+			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "data",
+						Namespace: namespace,
+						Labels: map[string]string{
+							"app.kubernetes.io/instance": queueManagerName,
+						},
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{
+							corev1.ReadWriteOnce,
+						},
+						Resources: corev1.VolumeResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceStorage: resource.MustParse("2Gi"),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return statefulSet, nil
+
+}
+
+func newFakeStatefulSetRevisionBySelector(selector, namespace string) ([]controllerruntimeclient.Object, error) {
+
+	// fetch the qm-instance name from the selector
+	queueManagerName, err := utils.FetchQMGRResourceNameFromSelector(selector)
+	if err != nil {
+		return nil, err
+	}
+
+	var revisions []controllerruntimeclient.Object
+	for i := 1; i <= 3; i++ {
+		ownerReferenceControllerAndDeletionRule := true
+
+		controllerRevision := &appsv1.ControllerRevision{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-ibm-mq-revision-%d", queueManagerName, i),
+				Namespace: namespace,
+				Labels: map[string]string{
+					"app.kubernetes.io/instance": queueManagerName,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion:         utils.ApiVersionAppsV1,
+						Kind:               utils.KindStatefulSet,
+						Name:               fmt.Sprintf("%s-ibm-mq", queueManagerName),
+						Controller:         &ownerReferenceControllerAndDeletionRule,
+						BlockOwnerDeletion: &ownerReferenceControllerAndDeletionRule,
+					},
+				},
+			},
+			Revision: int64(i),
+			Data: runtime.RawExtension{
+				Raw: []byte("{}"),
+			},
+		}
+
+		revisions = append(revisions, controllerRevision)
+	}
+
+	return revisions, nil
 
 }
 
@@ -255,9 +390,27 @@ func NewFakeCoreClientBySelector(selector, namespace string) (controllerruntimec
 		return nil, err
 	}
 
+	statefulSetObj, err := newFakeStatefulSetBySelector(selector, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	statefulSetRevisionObjs, err := newFakeStatefulSetRevisionBySelector(selector, namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	// register pods
 	var runtimeObjects []runtime.Object
 	for _, obj := range podObjs {
+		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
+	}
+
+	// register statefulset
+	runtimeObjects = append(runtimeObjects, statefulSetObj.(runtime.Object))
+
+	// register statefulset revisions
+	for _, obj := range statefulSetRevisionObjs {
 		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
 	}
 

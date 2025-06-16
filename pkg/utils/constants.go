@@ -20,6 +20,8 @@ const KindStatefulSet = "StatefulSet"
 
 const KindQueueManager = "Queuemanager"
 
+const KindControllerRevision = "ControllerRevision"
+
 const KindRoute = "Route"
 
 const KindService = "Service"

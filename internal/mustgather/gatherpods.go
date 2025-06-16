@@ -15,7 +15,7 @@ func gatherPodsToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	// build the kubernetes client from config
 	client, err := kubeclient.BuildKubernetesClientFromConfig(cfg)
 	if err != nil {
-		return fmt.Errorf("error building kubernetes client: %v", err)
+		return fmt.Errorf("error building core client from config: %v", err)
 	}
 
 	// check if QueueManager and MQ Operator namespace exists

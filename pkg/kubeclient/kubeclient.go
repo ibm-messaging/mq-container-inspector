@@ -39,4 +39,5 @@ func BuildKubernetesDynamicClientFromConfig(cfg *rest.Config) (*dynamic.DynamicC
 
 func BuildRouteClientFromConfig(cfg *rest.Config) (*routeClient.Clientset, error) {
 	return routeClient.NewForConfig(cfg)
+
 }
