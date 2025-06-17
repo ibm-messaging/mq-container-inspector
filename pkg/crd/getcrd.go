@@ -24,6 +24,10 @@ func GetQueueManagerCrdDetailsByName(dynamicClient dynamic.Interface, queueManag
 
 	unstructuredObject, err := dynamicClient.Resource(queueManagerGVR).Namespace(namespace).Get(context.TODO(), queueManagerName, metav1.GetOptions{})
 
+	if err != nil {
+		return nil, err
+	}
+
 	return unstructuredObject.Object, err
 
 }

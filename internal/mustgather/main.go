@@ -37,6 +37,12 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return err
 	}
 
+	// collect PVC must-gathers
+	err = gatherPVCToFiles(cfg, flags)
+	if err != nil {
+		return err
+	}
+
 	return nil
 
 }

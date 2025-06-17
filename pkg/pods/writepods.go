@@ -20,41 +20,44 @@ import (
 //   - outputDir:      the directory in which the details file will be created.
 func WritePodDetailsToFile(podList []corev1.Pod, fileNameFormat, outputDir string) error {
 
-	fileName := utils.FormatFilePath(outputDir, fileNameFormat)
+	if len(podList) > 0 {
 
-	file, err := os.Create(fileName)
-	if err != nil {
-		return fmt.Errorf("error creating file(%s): %v", fileName, err)
+		fileName := utils.FormatFilePath(outputDir, fileNameFormat)
+
+		file, err := os.Create(fileName)
+		if err != nil {
+			return fmt.Errorf("error creating file(%s): %v", fileName, err)
+		}
+		defer file.Close()
+
+		// tabwriter will handle dynamic spacing
+		writer := tabwriter.NewWriter(file, 0, 8, 2, ' ', 0)
+
+		// write file header
+		fmt.Fprintf(writer, "NAME\tREADY\tSTATUS\tRESTARTS\tAGE\tIP\tNODE\n")
+
+		for _, pod := range podList {
+
+			podName := pod.Name
+			totalContainers := len(pod.Status.ContainerStatuses)
+			readyContainers := getReadyContainersCount(pod)
+			ready := fmt.Sprintf("%d/%d", readyContainers, totalContainers)
+			podStatus := getPodStatus(pod)
+			restartCount := getContainerRestartCount(pod)
+
+			//TODO: where to get the last-restart time like: (17h ago)
+
+			podAge := getPodAge(pod.CreationTimestamp.Time)
+			podIP := pod.Status.PodIP
+			nodeName := pod.Spec.NodeName
+
+			fmt.Fprintf(writer, "%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
+				podName, ready, podStatus, restartCount, podAge, podIP, nodeName)
+
+		}
+
+		writer.Flush()
 	}
-	defer file.Close()
-
-	// tabwriter will handle dynamic spacing
-	writer := tabwriter.NewWriter(file, 0, 8, 2, ' ', 0)
-
-	// write file header
-	fmt.Fprintf(writer, "NAME\tREADY\tSTATUS\tRESTARTS\tAGE\tIP\tNODE\n")
-
-	for _, pod := range podList {
-
-		podName := pod.Name
-		totalContainers := len(pod.Status.ContainerStatuses)
-		readyContainers := getReadyContainersCount(pod)
-		ready := fmt.Sprintf("%d/%d", readyContainers, totalContainers)
-		podStatus := getPodStatus(pod)
-		restartCount := getContainerRestartCount(pod)
-
-		//TODO: where to get the last-restart time like: (17h ago)
-
-		podAge := getPodAge(pod.CreationTimestamp.Time)
-		podIP := pod.Status.PodIP
-		nodeName := pod.Spec.NodeName
-
-		fmt.Fprintf(writer, "%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
-			podName, ready, podStatus, restartCount, podAge, podIP, nodeName)
-
-	}
-
-	writer.Flush()
 
 	return nil
 

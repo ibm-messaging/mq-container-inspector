@@ -26,6 +26,8 @@ const KindRoute = "Route"
 
 const KindService = "Service"
 
+const KindPVC = "PersistentVolumeClaim"
+
 const QmgrGroup = "mq.ibm.com"
 
 const QmgrVersion = "v1beta1"

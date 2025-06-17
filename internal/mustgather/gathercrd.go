@@ -23,6 +23,11 @@ func gatherCrdToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return fmt.Errorf("error retrieving queue-manager %s in the namespace %s: %v", flags.QueueManagerName, flags.QueueManagerNamespace, err)
 	}
 
+	// check if the QueueManager with the provided name exists in the provided namespace
+	if queueManagerDetailsMap == nil || len(queueManagerDetailsMap) == 0 {
+		return fmt.Errorf("error no QueueManager with metadata.name as %s, found in the namespace %s", flags.QueueManagerName, flags.QueueManagerNamespace)
+	}
+
 	//write the QueueManager details to its yaml
 	fileNameFormat := "%s.yaml"
 	if err := crd.WriteQueueManagerCrdYamlToFiles(queueManagerDetailsMap, fileNameFormat, flags.OutputDir, flags.QueueManagerName); err != nil {

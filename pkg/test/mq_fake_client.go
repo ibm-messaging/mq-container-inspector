@@ -386,6 +386,49 @@ func newFakeQueueManagerCrdBySelector(selector, namespace string) (*unstructured
 	return queueManagerCrd, nil
 }
 
+func newFakePVCsBySelector(selector, namespace string) ([]controllerruntimeclient.Object, error) {
+
+	queueManagerName, err := utils.FetchQMGRResourceNameFromSelector(selector)
+	if err != nil {
+		return nil, err
+	}
+
+	storageClassName := "ocs-storagecluster-ceph-rbd"
+	var pvcList []controllerruntimeclient.Object
+
+	for i := 0; i < 3; i++ {
+
+		pvcName := fmt.Sprintf("data-%s-volume-ibm-mq-%d", queueManagerName, i)
+
+		pvc := &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      pvcName,
+				Namespace: namespace,
+				Labels: map[string]string{
+					"app.kubernetes.io/instance": queueManagerName,
+				},
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{
+					corev1.ReadWriteOnce,
+				},
+				Resources: corev1.VolumeResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceStorage: resource.MustParse("2Gi"),
+					},
+				},
+				StorageClassName: &storageClassName,
+			},
+		}
+
+		pvcList = append(pvcList, pvc)
+
+	}
+
+	return pvcList, nil
+
+}
+
 func newFakeRoutesBySelector(selector, namespace string) ([]controllerruntimeclient.Object, error) {
 
 	queueManagerName, err := utils.FetchQMGRResourceNameFromSelector(selector)
@@ -494,6 +537,11 @@ func NewFakeCoreClientBySelector(selector, namespace string) (controllerruntimec
 		return nil, err
 	}
 
+	pvcObjs, err := newFakePVCsBySelector(selector, namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	// register pods
 	var runtimeObjects []runtime.Object
 	for _, obj := range podObjs {
@@ -506,6 +554,11 @@ func NewFakeCoreClientBySelector(selector, namespace string) (controllerruntimec
 	// register statefulset revisions
 	for _, obj := range statefulSetRevisionObjs {
 		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
+	}
+
+	//register pvc's
+	for _, pvc := range pvcObjs {
+		runtimeObjects = append(runtimeObjects, pvc.(runtime.Object))
 	}
 
 	// register service
