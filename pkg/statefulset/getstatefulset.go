@@ -14,8 +14,8 @@ import (
 // GetStatefulSetDetailsBySelector retrieves all StatefulSets in a given namespace that match the provided label selector.
 // Parameters:
 //   - client: the Kubernetes client used to interact with the cluster.
-//   - selector: the label selector used to filter the pods.
-//   - namespace: the namespace in which to search for the pods.
+//   - selector: the label selector used to filter the StatefulSets.
+//   - namespace: the namespace in which to search for the StatefulSets.
 func GetStatefulSetDetailsBySelector(client kubernetes.Interface, selector, namespace string) ([]appsv1.StatefulSet, error) {
 
 	statefulSetList, err := client.AppsV1().StatefulSets(namespace).List(context.TODO(), metav1.ListOptions{
@@ -35,8 +35,8 @@ func GetStatefulSetDetailsBySelector(client kubernetes.Interface, selector, name
 // GetStatefulSetRevisionsBySelector retrieves all StatefulSet revisions in a given namespace that match the provided label selector.
 // Parameters:
 //   - client: the Kubernetes client used to interact with the cluster.
-//   - selector: the label selector used to filter the pods.
-//   - namespace: the namespace in which to search for the pods.
+//   - selector: the label selector used to filter the StatefulSets.
+//   - namespace: the namespace in which to search for the StatefulSets.
 func GetStatefulSetRevisionsBySelector(client kubernetes.Interface, selector, namespace string) ([]appsv1.ControllerRevision, error) {
 
 	statefulSetRevisionList, err := client.AppsV1().ControllerRevisions(namespace).List(context.TODO(), metav1.ListOptions{
@@ -56,8 +56,8 @@ func GetStatefulSetRevisionsBySelector(client kubernetes.Interface, selector, na
 // GetStatefulSetRevisionsBySelector retrieves all StatefulSet events in a given namespace that match the provided label selector.
 // Parameters:
 //   - client: the Kubernetes client used to interact with the cluster.
-//   - selector: the label selector used to filter the pods.
-//   - namespace: the namespace in which to search for the pods.
+//   - selector: the label selector used to filter the StatefulSets.
+//   - namespace: the namespace in which to search for the StatefulSets.
 func GetStatefulSetEventsBySelector(client kubernetes.Interface, selector, namespace string) (map[string][]corev1.Event, error) {
 
 	statefulSetList, err := GetStatefulSetDetailsBySelector(client, selector, namespace)

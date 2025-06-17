@@ -122,7 +122,7 @@ func getExpectedPodCountFromFakeCoreClient() (int, corev1.PodList, error) {
 
 	labelSelector, err := labels.Parse(selector)
 	if err != nil {
-		return 0, expectedPodList, fmt.Errorf("error while parsing label selector: %s", labelSelector)
+		return 0, expectedPodList, fmt.Errorf("error while parsing label selector %s: %v", selector, err)
 	}
 
 	err = coreClient.List(context.TODO(), &expectedPodList, &client.ListOptions{

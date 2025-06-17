@@ -249,6 +249,95 @@ func newFakeStatefulSetRevisionBySelector(selector, namespace string) ([]control
 
 }
 
+func newFakeServiceBySelector(selector, namespace string) ([]controllerruntimeclient.Object, error) {
+
+	queueManagerName, err := utils.FetchQMGRResourceNameFromSelector(selector)
+	if err != nil {
+		return nil, err
+	}
+
+	queueManagerServiceName := fmt.Sprintf("%s-ibm-mq", queueManagerName)
+	queueManagerMetricsServiceName := fmt.Sprintf("%s-ibm-mq-metrics", queueManagerName)
+	ownerReferenceControllerAndDeletionRule := true
+
+	queueManagerService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      queueManagerServiceName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/instance": queueManagerName,
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         fmt.Sprintf("%s/%s", utils.QmgrGroup, utils.QmgrVersion),
+					Kind:               utils.KindQueueManager,
+					Name:               queueManagerName,
+					Controller:         &ownerReferenceControllerAndDeletionRule,
+					BlockOwnerDeletion: &ownerReferenceControllerAndDeletionRule,
+				},
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			IPFamilies: []corev1.IPFamily{
+				corev1.IPv4Protocol,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "console-https",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       9443,
+					TargetPort: intstr.FromInt(9443),
+				},
+				{
+					Name:       "qmgr",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       1414,
+					TargetPort: intstr.FromInt(1414),
+				},
+			},
+			Type:            corev1.ServiceTypeClusterIP,
+			SessionAffinity: corev1.ServiceAffinityNone,
+		},
+	}
+
+	queueManagerMetricService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      queueManagerMetricsServiceName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/instance": queueManagerName,
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         fmt.Sprintf("%s/%s", utils.QmgrGroup, utils.QmgrVersion),
+					Kind:               utils.KindQueueManager,
+					Name:               queueManagerName,
+					Controller:         &ownerReferenceControllerAndDeletionRule,
+					BlockOwnerDeletion: &ownerReferenceControllerAndDeletionRule,
+				},
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			IPFamilies: []corev1.IPFamily{
+				corev1.IPv4Protocol,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "metrics",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       9157,
+					TargetPort: intstr.FromInt(9157),
+				},
+			},
+			Type:            corev1.ServiceTypeClusterIP,
+			SessionAffinity: corev1.ServiceAffinityNone,
+		},
+	}
+
+	return []controllerruntimeclient.Object{queueManagerService, queueManagerMetricService}, nil
+
+}
+
 func newFakeQueueManagerCrdBySelector(selector, namespace string) (*unstructured.Unstructured, error) {
 
 	// fetch the qm-instance name from the selector
@@ -400,6 +489,11 @@ func NewFakeCoreClientBySelector(selector, namespace string) (controllerruntimec
 		return nil, err
 	}
 
+	serviceObjs, err := newFakeServiceBySelector(selector, namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	// register pods
 	var runtimeObjects []runtime.Object
 	for _, obj := range podObjs {
@@ -411,6 +505,11 @@ func NewFakeCoreClientBySelector(selector, namespace string) (controllerruntimec
 
 	// register statefulset revisions
 	for _, obj := range statefulSetRevisionObjs {
+		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
+	}
+
+	// register service
+	for _, obj := range serviceObjs {
 		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
 	}
 

@@ -112,7 +112,7 @@ func getExpectedStatefulSetRevisionListFromFakeCoreClient() (int, appsv1.Control
 
 	labelSelector, err := labels.Parse(selector)
 	if err != nil {
-		return 0, expectedStatefulSetRevisionList, fmt.Errorf("error while parsing label selector: %s", labelSelector)
+		return 0, expectedStatefulSetRevisionList, fmt.Errorf("error while parsing label selector %s: %v", selector, err)
 	}
 
 	err = coreClient.List(context.TODO(), &expectedStatefulSetRevisionList, &client.ListOptions{
@@ -138,7 +138,7 @@ func getExpectedStatefulSetListFromFakeCoreClient() (int, appsv1.StatefulSetList
 
 	labelSelector, err := labels.Parse(selector)
 	if err != nil {
-		return 0, expectedStatefulSetList, fmt.Errorf("error while parsing label selector: %s", labelSelector)
+		return 0, expectedStatefulSetList, fmt.Errorf("error while parsing label selector %s: %v", selector, err)
 	}
 
 	err = coreClient.List(context.TODO(), &expectedStatefulSetList, &client.ListOptions{

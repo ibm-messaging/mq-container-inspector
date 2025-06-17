@@ -170,39 +170,42 @@ func WritePodEventsToFile(podEventMap map[string][]corev1.Event, fileNameFormat,
 
 	for podName, podEvents := range podEventMap {
 
-		fileName := utils.FormatFilePath(outputDir, fileNameFormat, podName)
+		if len(podEvents) > 0 {
 
-		file, err := os.Create(fileName)
-		if err != nil {
-			return fmt.Errorf("error creating %s pod event file %s: %v", podName, fileName, err)
-		}
+			fileName := utils.FormatFilePath(outputDir, fileNameFormat, podName)
 
-		// tabwriter will handle dynamic spacing
-		writer := tabwriter.NewWriter(file, 0, 8, 2, ' ', 0)
-
-		// write the header
-		fmt.Fprintf(writer, "LAST SEEN\tTYPE\tREASON\tKIND\tNAME\tMESSAGE\n")
-
-		for _, event := range podEvents {
-
-			var lastSeen string
-			if !event.LastTimestamp.IsZero() {
-				lastSeen = event.LastTimestamp.Format(time.RFC3339)
+			file, err := os.Create(fileName)
+			if err != nil {
+				return fmt.Errorf("error creating %s pod event file %s: %v", podName, fileName, err)
 			}
 
-			fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\t%s\n",
-				lastSeen,
-				event.Type,
-				event.Reason,
-				event.InvolvedObject.Kind,
-				event.InvolvedObject.Name,
-				event.Message)
+			// tabwriter will handle dynamic spacing
+			writer := tabwriter.NewWriter(file, 0, 8, 2, ' ', 0)
+
+			// write the header
+			fmt.Fprintf(writer, "LAST SEEN\tTYPE\tREASON\tKIND\tNAME\tMESSAGE\n")
+
+			for _, event := range podEvents {
+
+				var lastSeen string
+				if !event.LastTimestamp.IsZero() {
+					lastSeen = event.LastTimestamp.Format(time.RFC3339)
+				}
+
+				fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\t%s\n",
+					lastSeen,
+					event.Type,
+					event.Reason,
+					event.InvolvedObject.Kind,
+					event.InvolvedObject.Name,
+					event.Message)
+
+			}
+
+			writer.Flush()
+			file.Close()
 
 		}
-
-		writer.Flush()
-		file.Close()
-
 	}
 
 	return nil
