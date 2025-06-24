@@ -41,6 +41,21 @@ func buildNewScheme() *runtime.Scheme {
 		&unstructured.UnstructuredList{})
 	metav1.AddToGroupVersion(scheme, queueManagerGV)
 
+	// register CSV
+	csvGV := schema.GroupVersion{
+		Group:   utils.OperatorGroup,
+		Version: utils.OperatorVersion,
+	}
+	scheme.AddKnownTypeWithName(
+		csvGV.WithKind(utils.KindCSV),
+		&unstructured.Unstructured{},
+	)
+	scheme.AddKnownTypeWithName(
+		csvGV.WithKind(utils.KindCSVList),
+		&unstructured.UnstructuredList{},
+	)
+	metav1.AddToGroupVersion(scheme, csvGV)
+
 	return scheme
 
 }
@@ -513,6 +528,188 @@ func newFakeRoutesBySelector(selector, namespace string) ([]controllerruntimecli
 
 }
 
+func newFakeMqOperatorDeploymentBySelector(selector, namespace string) controllerruntimeclient.Object {
+
+	replicas := int32(1)
+	revisionHistoryLimit := int32(1)
+	progressDeadlineSeconds := int32(600)
+	terminationGracePeriodSeconds := int64(10)
+	runAsNonRoot := true
+
+	mqOperatorDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ibm-mq-operator",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": "ibm-mq",
+				"control-plane":          "controller-manager",
+			},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas:                &replicas,
+			RevisionHistoryLimit:    &revisionHistoryLimit,
+			ProgressDeadlineSeconds: &progressDeadlineSeconds,
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyAlways,
+					SchedulerName: "default-scheduler",
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "kubernetes.io/arch",
+												Operator: corev1.NodeSelectorOpIn,
+												Values: []string{
+													"amd64",
+													"ppc64le",
+													"s390x",
+												},
+											},
+											{
+												Key:      "kubernetes.io/os",
+												Operator: corev1.NodeSelectorOpIn,
+												Values: []string{
+													"linux",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsNonRoot: &runAsNonRoot,
+					},
+					Containers: []corev1.Container{
+						{
+							Name:            "manager",
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Image:           "na.artifactory.swg-devops.com/hyc-mq-container-team-docker-local/asiro/ibm-mq-operator:latest",
+							Args: []string{
+								"--leader-elect",
+								"--health-probe-bind-address=:8081",
+							},
+						},
+					},
+				},
+			},
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RecreateDeploymentStrategyType,
+			},
+		},
+	}
+	return mqOperatorDeployment
+}
+
+func newFakeMqOperatorPodBySelector(selector, namespace string) controllerruntimeclient.Object {
+
+	terminationGracePeriodSeconds := int64(10)
+
+	mqOperatorPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ibm-mq-operator-c57f9c7b6-c84kj",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": "ibm-mq",
+				"control-plane":          "controller-manager",
+			},
+		},
+		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyAlways,
+			Affinity: &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "kubernetes.io/arch",
+										Operator: corev1.NodeSelectorOpIn,
+										Values: []string{
+											"amd64",
+											"ppc64le",
+											"s390x",
+										},
+									},
+									{
+										Key:      "kubernetes.io/os",
+										Operator: corev1.NodeSelectorOpIn,
+										Values: []string{
+											"linux",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
+			Containers: []corev1.Container{
+				{
+					Name:            "manager",
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Image:           "na.artifactory.swg-devops.com/hyc-mq-container-team-docker-local/asiro/ibm-mq-operator:latest",
+					Args: []string{
+						"--leader-elect",
+						"--health-probe-bind-address=:8081",
+					},
+				},
+			},
+		},
+	}
+
+	return mqOperatorPod
+
+}
+
+func newFakeMQOperatorCSVBySelector(selector, namespace string) *unstructured.Unstructured {
+
+	csv := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": fmt.Sprintf("%s/%s", utils.OperatorGroup, utils.OperatorVersion),
+			"kind":       utils.KindCSV,
+			"metadata": map[string]interface{}{
+				"name":      "ibm-mq.v3.6.0",
+				"namespace": namespace,
+				"labels": map[string]interface{}{
+					"app.kubernetes.io/name":       "ibm-mq",
+					"app.kubernetes.io/managed-by": "olm",
+				},
+			},
+			"spec": map[string]interface{}{
+				"customresourcedefinitions": []interface{}{
+					map[string]interface{}{
+						"displayName": "Queue Manager",
+						"kind":        utils.KindQueueManager,
+						"name":        "queuemanagers.mq.ibm.com",
+						"version":     utils.QmgrVersion,
+					},
+				},
+				"displayName": "IBM MQ",
+				"provider": map[string]interface{}{
+					"name": "IBM",
+				},
+				"maturity": "stable",
+				"version":  "3.6.0",
+			},
+		},
+	}
+	csv.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   utils.OperatorGroup,
+		Version: utils.OperatorVersion,
+		Kind:    utils.KindCSV,
+	})
+
+	return csv
+
+}
+
 func NewFakeCoreClientBySelector(selector, namespace string) (controllerruntimeclient.Client, error) {
 
 	scheme := buildNewScheme()
@@ -542,6 +739,9 @@ func NewFakeCoreClientBySelector(selector, namespace string) (controllerruntimec
 		return nil, err
 	}
 
+	mqOperatorDeploymentObj := newFakeMqOperatorDeploymentBySelector(selector, namespace)
+	mqOperatorPodObj := newFakeMqOperatorPodBySelector(selector, namespace)
+
 	// register pods
 	var runtimeObjects []runtime.Object
 	for _, obj := range podObjs {
@@ -566,6 +766,9 @@ func NewFakeCoreClientBySelector(selector, namespace string) (controllerruntimec
 		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
 	}
 
+	// register mq-operator deployment and pod
+	runtimeObjects = append(runtimeObjects, mqOperatorDeploymentObj.(runtime.Object), mqOperatorPodObj.(runtime.Object))
+
 	return controllerruntimefake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(runtimeObjects...).Build(), nil
 
 }
@@ -574,12 +777,16 @@ func NewFakeDynamicClientBySelector(selector, namespace string) (*dynamicfake.Fa
 
 	scheme := buildNewScheme()
 
+	// get the QueueManager object
 	queueManagerCrdObj, err := newFakeQueueManagerCrdBySelector(selector, namespace)
 	if err != nil {
 		return nil, err
 	}
 
-	return dynamicfake.NewSimpleDynamicClient(scheme, queueManagerCrdObj), nil
+	// get the CSV object
+	csvObj := newFakeMQOperatorCSVBySelector(selector, namespace)
+
+	return dynamicfake.NewSimpleDynamicClient(scheme, queueManagerCrdObj, csvObj), nil
 
 }
 

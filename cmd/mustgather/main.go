@@ -46,7 +46,7 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 
 	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name (required)")
 	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "QueueManager custom resource metadata.namespace (required)")
-	flagSet.StringVar(&flags.OperatorNamespace, "operator-namespace", "", "MQ Operator namespace (required)")
+	flagSet.StringVar(&flags.OperatorNamespace, "operator-namespace", "", "MQ Operator namespace")
 	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "kubeconfig file path, defaults to '.kube/config'")
 	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "output directory where the must-gather files will be stored, defaults to current-working-directory")
 	flagSet.BoolVar(&flags.TarZip, "tar-zip", true, "whether or not to tar-zip the must-gathers, defaults to true")
@@ -104,7 +104,7 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 
 func validateRequiredFlags(flags utils.MustGatherFlags) bool {
 
-	if flags.QueueManagerName == "" || flags.QueueManagerNamespace == "" || flags.OperatorNamespace == "" {
+	if flags.QueueManagerName == "" || flags.QueueManagerNamespace == "" {
 		return false
 	}
 

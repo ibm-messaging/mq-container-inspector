@@ -19,8 +19,11 @@ func gatherPodsToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	}
 
 	// check if QueueManager and MQ Operator namespace exists
-	if namespaceName, err := namespace.CheckIfNamespacesExist(client, flags.QueueManagerNamespace, flags.OperatorNamespace); err != nil {
-		return fmt.Errorf("error while checking if the namespaces %v exist: %v", namespaceName, err)
+	namespaceExists, err := namespace.DoesNamespacesExist(client, flags.QueueManagerNamespace)
+	if err != nil {
+		return fmt.Errorf("error while checking if the namespace %v exist: %v", flags.QueueManagerNamespace, err)
+	} else if !namespaceExists {
+		return fmt.Errorf("provided queue manager namespace %v was not found on the cluster", flags.QueueManagerNamespace)
 	}
 
 	podLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)

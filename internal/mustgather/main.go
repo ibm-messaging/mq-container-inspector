@@ -43,6 +43,12 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return err
 	}
 
+	// collect MQ operator must-gathers
+	err = gatherMQOperatorToFiles(cfg, flags)
+	if err != nil {
+		return err
+	}
+
 	return nil
 
 }

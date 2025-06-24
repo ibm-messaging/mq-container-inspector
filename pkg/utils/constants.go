@@ -28,6 +28,12 @@ const KindService = "Service"
 
 const KindPVC = "PersistentVolumeClaim"
 
+const KindDeployment = "Deployment"
+
+const KindCSV = "ClusterServiceVersion"
+
+const KindCSVList = "ClusterServiceVersionList"
+
 const QmgrGroup = "mq.ibm.com"
 
 const QmgrVersion = "v1beta1"
@@ -35,3 +41,11 @@ const QmgrVersion = "v1beta1"
 const QmgrResource = "queuemanagers"
 
 const RouteAPIGroupName = "route.openshift.io"
+
+const OperatorGroup = "operators.coreos.com"
+
+const OperatorVersion = "v1alpha1"
+
+const CSVResource = "clusterserviceversions"
+
+const GlobalOperatorNamespace = "openshift-operators"
