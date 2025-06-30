@@ -18,7 +18,7 @@ const KindList = "List"
 
 const KindStatefulSet = "StatefulSet"
 
-const KindQueueManager = "Queuemanager"
+const KindQueueManager = "QueueManager"
 
 const KindControllerRevision = "ControllerRevision"
 
@@ -34,11 +34,21 @@ const KindCSV = "ClusterServiceVersion"
 
 const KindCSVList = "ClusterServiceVersionList"
 
+const KindIntegrationKeycloakClientList = "KindIntegrationKeycloakClient"
+
+const KindIntegrationKeycloakClient = "IntegrationKeycloakClient"
+
 const QmgrGroup = "mq.ibm.com"
 
 const QmgrVersion = "v1beta1"
 
 const QmgrResource = "queuemanagers"
+
+const IntegrationKeycloakClientGroup = "keycloak.integration.ibm.com"
+
+const IntegrationKeycloakClientVersion = "v1beta1"
+
+const IntegrationKeycloakClientResource = "integrationkeycloakclients"
 
 const RouteAPIGroupName = "route.openshift.io"
 

@@ -56,6 +56,21 @@ func buildNewScheme() *runtime.Scheme {
 	)
 	metav1.AddToGroupVersion(scheme, csvGV)
 
+	// register IntegrationkeycloakClient
+	integrationKeycloakClientGV := schema.GroupVersion{
+		Group:   utils.IntegrationKeycloakClientGroup,
+		Version: utils.IntegrationKeycloakClientVersion,
+	}
+	scheme.AddKnownTypeWithName(
+		csvGV.WithKind(utils.KindIntegrationKeycloakClient),
+		&unstructured.Unstructured{},
+	)
+	scheme.AddKnownTypeWithName(
+		csvGV.WithKind(utils.KindIntegrationKeycloakClientList),
+		&unstructured.UnstructuredList{},
+	)
+	metav1.AddToGroupVersion(scheme, integrationKeycloakClientGV)
+
 	return scheme
 
 }
@@ -589,7 +604,7 @@ func newFakeMqOperatorDeploymentBySelector(selector, namespace string) controlle
 						{
 							Name:            "manager",
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Image:           "na.artifactory.swg-devops.com/hyc-mq-container-team-docker-local/asiro/ibm-mq-operator:latest",
+							Image:           "registrey/ibm-mq-operator:latest",
 							Args: []string{
 								"--leader-elect",
 								"--health-probe-bind-address=:8081",
@@ -654,7 +669,7 @@ func newFakeMqOperatorPodBySelector(selector, namespace string) controllerruntim
 				{
 					Name:            "manager",
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Image:           "na.artifactory.swg-devops.com/hyc-mq-container-team-docker-local/asiro/ibm-mq-operator:latest",
+					Image:           "registry/ibm-mq-operator:latest",
 					Args: []string{
 						"--leader-elect",
 						"--health-probe-bind-address=:8081",
@@ -707,6 +722,56 @@ func newFakeMQOperatorCSVBySelector(selector, namespace string) *unstructured.Un
 	})
 
 	return csv
+
+}
+
+func newFakeIntegrationKeycloakClient(selector, namespace string) (*unstructured.Unstructured, error) {
+
+	queueManagerName, err := utils.FetchQMGRResourceNameFromSelector(selector)
+	if err != nil {
+		return nil, err
+	}
+
+	integrationKeycloakClient := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": fmt.Sprintf("%s/%s", utils.IntegrationKeycloakClientGroup, utils.IntegrationKeycloakClientVersion),
+			"kind":       utils.KindIntegrationKeycloakClient,
+			"metadata": map[string]interface{}{
+				"name":      fmt.Sprintf("%s-ibm-mq", queueManagerName),
+				"namespace": namespace,
+				"ownerReferences": []interface{}{
+					map[string]interface{}{
+						"apiVersion": fmt.Sprintf("%s/%s", utils.QmgrGroup, utils.QmgrVersion),
+						"kind":       utils.KindQueueManager,
+						"name":       queueManagerName,
+					},
+				},
+			},
+			"spec": map[string]interface{}{
+				"client": map[string]interface{}{
+					"clientId": fmt.Sprintf("queuemanger-%s-%s-ia46w", namespace, queueManagerName),
+					"defaultClientScopes": []interface{}{
+						"profile",
+					},
+					"directAccessGrantsEnabled": false,
+					"implicitFlowEnabled":       false,
+					"roles": []interface{}{
+						map[string]interface{}{
+							"name": "webadmin",
+						},
+						map[string]interface{}{
+							"name": "webadminro",
+						},
+						map[string]interface{}{
+							"name": "webuser",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return integrationKeycloakClient, nil
 
 }
 
@@ -786,7 +851,13 @@ func NewFakeDynamicClientBySelector(selector, namespace string) (*dynamicfake.Fa
 	// get the CSV object
 	csvObj := newFakeMQOperatorCSVBySelector(selector, namespace)
 
-	return dynamicfake.NewSimpleDynamicClient(scheme, queueManagerCrdObj, csvObj), nil
+	// get the IntegrationKeycloakClient object
+	integrationKeycloakClientObj, err := newFakeIntegrationKeycloakClient(selector, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return dynamicfake.NewSimpleDynamicClient(scheme, queueManagerCrdObj, csvObj, integrationKeycloakClientObj), nil
 
 }
 

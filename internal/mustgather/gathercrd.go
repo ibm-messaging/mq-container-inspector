@@ -34,6 +34,22 @@ func gatherCrdToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return err
 	}
 
+	// get the IntegrationKeycloakClient details by OwnershipReferences
+	integrationKeycloakClientDetails, err := crd.GetIntegrationKeycloakClientDetailsByOwnerReferences(dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace)
+	if err != nil {
+		// if requested resource not found then just continue
+		fmt.Printf("integration-keycloak-client %s in the namespace %s: %v\n", flags.QueueManagerName, flags.QueueManagerNamespace, err)
+	}
+
+	if integrationKeycloakClientDetails != nil {
+
+		// write the IntegrationKecloakClient details to its yaml
+		integrationkeycloakClientFileNameFormat := "%s-integration-keycloak-client.yaml"
+		if err := crd.WriteIntegrationKeycloakClientCrdYamlToFiles(integrationKeycloakClientDetails, integrationkeycloakClientFileNameFormat, flags.OutputDir); err != nil {
+			return err
+		}
+	}
+
 	return nil
 
 }
