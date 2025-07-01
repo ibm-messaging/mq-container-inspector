@@ -39,3 +39,11 @@ var FormatFilePath = func(outputDir, fileNameFormat string, args ...interface{})
 	filename := fmt.Sprintf(fileNameFormat, args...)
 	return filepath.Join(outputDir, filename)
 }
+
+type ExecConfig struct {
+	KubernetesConfig *rest.Config
+	PodName          string
+	Namespace        string
+	ContainerName    string
+	Cmd              []string
+}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/test"
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,7 +59,7 @@ func TestGetPodLogsBySelector(t *testing.T) {
 
 	fakeClient := fake.NewSimpleClientset(runtimeObjects...)
 
-	result, err := GetPodLogsBySelector(fakeClient, selector, namespace, "qmgr")
+	result, err := GetPodLogsBySelector(fakeClient, selector, namespace, utils.QmgrContainer)
 	if err != nil {
 		t.Errorf("error fetching pods logs by selector: %v", err)
 	}

@@ -44,6 +44,8 @@ const QmgrVersion = "v1beta1"
 
 const QmgrResource = "queuemanagers"
 
+const QmgrContainer = "qmgr"
+
 const IntegrationKeycloakClientGroup = "keycloak.integration.ibm.com"
 
 const IntegrationKeycloakClientVersion = "v1beta1"
@@ -59,3 +61,7 @@ const OperatorVersion = "v1alpha1"
 const CSVResource = "clusterserviceversions"
 
 const GlobalOperatorNamespace = "openshift-operators"
+
+const ResourcePod = "pods"
+
+const ExecSubcommand = "exec"

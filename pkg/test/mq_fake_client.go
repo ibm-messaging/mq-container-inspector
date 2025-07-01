@@ -108,8 +108,8 @@ func newFakePodsBySelector(selector, namespace string) ([]controllerruntimeclien
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name:  "qmgr",
-						Image: "cp.icr.io/cp/ibm-mqadvanced-server",
+						Name:  utils.QmgrContainer,
+						Image: "registry/ibm-mqadvanced-server",
 						Ports: []corev1.ContainerPort{
 							{
 								ContainerPort: 1414,
@@ -188,8 +188,8 @@ func newFakeStatefulSetBySelector(selector, namespace string) (controllerruntime
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "qmgr",
-							Image: "cp.icr.io/cp/ibm-mqadvanced-server",
+							Name:  utils.QmgrContainer,
+							Image: "registry/ibm-mqadvanced-server",
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 1414,
@@ -319,7 +319,7 @@ func newFakeServiceBySelector(selector, namespace string) ([]controllerruntimecl
 					TargetPort: intstr.FromInt(9443),
 				},
 				{
-					Name:       "qmgr",
+					Name:       utils.QmgrContainer,
 					Protocol:   corev1.ProtocolTCP,
 					Port:       1414,
 					TargetPort: intstr.FromInt(1414),

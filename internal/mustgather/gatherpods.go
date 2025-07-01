@@ -47,7 +47,7 @@ func gatherPodsToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	}
 
 	// get pod logs by selector
-	podLogs, err := pods.GetPodLogsBySelector(client, podLabelSelector, flags.QueueManagerNamespace, "qmgr")
+	podLogs, err := pods.GetPodLogsBySelector(client, podLabelSelector, flags.QueueManagerNamespace, utils.QmgrContainer)
 	if err != nil {
 		return fmt.Errorf("error while fetching pod logs with selector %s: %v", podLabelSelector, err)
 	}

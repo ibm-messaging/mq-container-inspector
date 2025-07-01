@@ -49,6 +49,12 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return err
 	}
 
+	// collect runmqras logs
+	err = gatherRunmqrasLogToFiles(cfg, flags)
+	if err != nil {
+		return err
+	}
+
 	return nil
 
 }

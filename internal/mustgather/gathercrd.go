@@ -24,7 +24,7 @@ func gatherCrdToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	}
 
 	// check if the QueueManager with the provided name exists in the provided namespace
-	if queueManagerDetailsMap == nil || len(queueManagerDetailsMap) == 0 {
+	if queueManagerDetailsMap == nil {
 		return fmt.Errorf("error no QueueManager with metadata.name as %s, found in the namespace %s", flags.QueueManagerName, flags.QueueManagerNamespace)
 	}
 
