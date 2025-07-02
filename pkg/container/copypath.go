@@ -16,20 +16,20 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-// The configuration required to copy a folder from the source directory of a container.
+// The configuration required to copy a the contents from the source path of a container.
 type CopyConfig struct {
 	KubeConfig    *rest.Config
 	Namespace     string
 	PodName       string
 	ContainerName string
-	SrcDir        string
+	SourcePath    string
 }
 
 // Helper function to create a CopyConfig from an ExecConfig
-func NewContainerCopyConfig(srcDir string, execConfig utils.ExecConfig) CopyConfig {
+func NewContainerCopyConfig(srcPath string, execConfig utils.ExecConfig) CopyConfig {
 	return CopyConfig{
 		KubeConfig:    execConfig.KubernetesConfig,
-		SrcDir:        srcDir,
+		SourcePath:    srcPath,
 		ContainerName: execConfig.ContainerName,
 		PodName:       execConfig.PodName,
 		Namespace:     execConfig.Namespace,
@@ -58,14 +58,14 @@ func newCopyPipe(copyConfig CopyConfig, retries int) *copyPipe {
 
 }
 
-// Start the copy pipe causing it to tar the src directory for the container
+// Start the copy pipe causing it to tar the src path for the container
 func (t *copyPipe) start(offset uint64) {
 	t.reader, t.writer = io.Pipe()
 
-	srcDir := strings.TrimSuffix(t.copyConfig.SrcDir, "/")
-	baseCmd := []string{"tar", "cf", "-", srcDir}
+	srcPath := strings.TrimSuffix(t.copyConfig.SourcePath, "/")
+	baseCmd := []string{"tar", "cf", "-", srcPath}
 	if t.maxRetries != 0 && offset > 0 {
-		baseCmd = []string{"sh", "-c", fmt.Sprintf("tar cf - %s | tail -c+%d", srcDir, offset)}
+		baseCmd = []string{"sh", "-c", fmt.Sprintf("tar cf - %s | tail -c+%d", srcPath, offset)}
 	}
 
 	copyCmd := utils.ExecConfig{
@@ -124,10 +124,10 @@ func (t *copyPipe) Close() error {
 	return t.reader.Close()
 }
 
-// Copy all files from the srcDir to the destDir using a copyPipe
-func copyAll(srcDir, destDir string, pipe io.Reader) error {
+// Copy all files from the sourcePath to the destinationPath using a copyPipe
+func copyAll(sourcePath, destinationPath string, pipe io.Reader) error {
 	pipeReader := tar.NewReader(pipe)
-	cleanDest := filepath.Clean(destDir)
+	cleanDest := filepath.Clean(destinationPath)
 
 	for {
 		h, err := pipeReader.Next()
@@ -139,16 +139,16 @@ func copyAll(srcDir, destDir string, pipe io.Reader) error {
 		}
 
 		// Validate prefix & build destination path
-		if !strings.HasPrefix(h.Name, srcDir) {
-			return fmt.Errorf("tar contents corrupted (entry %q lacks expected prefix %q)", h.Name, srcDir)
+		if !strings.HasPrefix(h.Name, sourcePath) {
+			return fmt.Errorf("tar contents corrupted (entry %q lacks expected prefix %q)", h.Name, sourcePath)
 		}
-		rel := strings.TrimPrefix(h.Name, srcDir)
-		dstPath := filepath.Join(destDir, rel)
+		rel := strings.TrimPrefix(h.Name, sourcePath)
+		dstPath := filepath.Join(destinationPath, rel)
 		cleanPath := filepath.Clean(dstPath)
 
 		// Allow writing to destDir itself *or* to any child of it, but nowhere else.
 		if cleanPath != cleanDest && !strings.HasPrefix(cleanPath, cleanDest+string(os.PathSeparator)) {
-			return fmt.Errorf("tar entry %q would write outside %q", h.Name, destDir)
+			return fmt.Errorf("tar entry %q would write outside %q", h.Name, destinationPath)
 		}
 
 		if h.FileInfo().IsDir() {
@@ -175,16 +175,23 @@ func copyAll(srcDir, destDir string, pipe io.Reader) error {
 	}
 }
 
-// Copy the contents of a folder from the source directory and container specified in copyConfig
-// to the outputDir with a fixed number of retries. Returns nil on success or an error on failure.
-func CopyFolderToFile(copyConfig CopyConfig, outputDir string, retries int) error {
+// Copy the contents of the source path on the container specified in copyConfig
+// to the outputPath with a fixed number of retries. Returns nil on success or an error on failure.
+func CopyPathToFile(copyConfig CopyConfig, outputPath string, retries int) error {
 
 	copyPipe := newCopyPipe(copyConfig, retries)
 
-	srcDir := strings.TrimLeft(strings.TrimSuffix(copyConfig.SrcDir, "/")+"/", "/")
+	sourcePath := copyConfig.SourcePath
 
-	if err := copyAll(srcDir, outputDir, copyPipe); err != nil {
-		return fmt.Errorf("error while copying runmqras files from container: %v", err)
+	// if the sourcePath is a file then don't append a '/' at the end
+	if filepath.Ext(sourcePath) != "" {
+		sourcePath = strings.TrimLeft(strings.TrimSuffix(copyConfig.SourcePath, "/"), "/")
+	} else {
+		sourcePath = strings.TrimLeft(strings.TrimSuffix(copyConfig.SourcePath, "/")+"/", "/")
+	}
+
+	if err := copyAll(sourcePath, outputPath, copyPipe); err != nil {
+		return fmt.Errorf("error while copying files from container: %v", err)
 	}
 
 	return nil

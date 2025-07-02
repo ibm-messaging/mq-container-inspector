@@ -22,11 +22,11 @@ func gatherRunmqrasLogToFiles(cfg *rest.Config, flags utils.MustGatherFlags) err
 
 	runmqrasCopyConfigs, err := runmqras.ExecRunmqrasBySelector(cfg, coreClient, runmqrasLabelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		return fmt.Errorf("error while executing runmqras command in container: %v\n", err)
+		return fmt.Errorf("error while executing runmqras command in container: %v", err)
 	}
 
 	for _, runmqrasCopyConfig := range runmqrasCopyConfigs {
-		if err := container.CopyFolderToFile(runmqrasCopyConfig, flags.OutputDir, 10); err != nil {
+		if err := container.CopyPathToFile(runmqrasCopyConfig, flags.OutputDir, 10); err != nil {
 			return err
 		}
 	}

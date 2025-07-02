@@ -3,6 +3,7 @@ package container
 import (
 	"archive/tar"
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,7 +35,7 @@ func TestNewContainerCopyConfig(t *testing.T) {
 	if cfg.ContainerName != execConfig.ContainerName {
 		t.Errorf("ContainerName not set correctly")
 	}
-	if cfg.SrcDir != srcDir {
+	if cfg.SourcePath != srcDir {
 		t.Errorf("SrcDir not set correctly")
 	}
 }
@@ -76,6 +77,55 @@ func TestCopyAll_Success(t *testing.T) {
 	}
 }
 
+func TestCopyFileFromTar_Success(t *testing.T) {
+	// Create a tar with a single file: /src/hello.txt
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	content := []byte("hello world")
+	hdr := &tar.Header{
+		Name: "/src/hello.txt",
+		Mode: 0600,
+		Size: int64(len(content)),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		t.Fatalf("WriteHeader failed: %v", err)
+	}
+	if _, err := tw.Write(content); err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatalf("Close tar writer failed: %v", err)
+	}
+
+	pipeReader, pipeWriter := io.Pipe()
+	cp := &copyPipe{
+		copyConfig: CopyConfig{SourcePath: "/src/hello.txt"},
+		reader:     pipeReader,
+	}
+
+	go func() {
+		if _, err := pipeWriter.Write(buf.Bytes()); err != nil {
+			pipeWriter.CloseWithError(err)
+			return
+		}
+		pipeWriter.Close()
+	}()
+
+	outPath := filepath.Join(t.TempDir(), "output.txt")
+	if err := copyAll("/src/hello.txt", outPath, cp); err != nil {
+		t.Fatalf("copyAll for file failed: %v", err)
+	}
+
+	got, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("Failed to read %q: %v", outPath, err)
+	}
+
+	if string(got) != string(content) {
+		t.Errorf("Content mismatch: got %q, expected %q", got, content)
+	}
+}
+
 func TestCopyAll_TarEntryOutsideDest(t *testing.T) {
 	// Create a tar with an invalid path
 	var buf bytes.Buffer
@@ -113,7 +163,7 @@ func TestNewCopyPipe_Initializes(t *testing.T) {
 		Namespace:     "ns",
 		PodName:       "pod",
 		ContainerName: "container",
-		SrcDir:        "/src",
+		SourcePath:    "/src",
 	}
 
 	pipe := newCopyPipe(cfg, 2)
