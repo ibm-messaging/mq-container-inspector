@@ -2,6 +2,7 @@ package csv
 
 import (
 	"context"
+	"strings"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,5 +33,35 @@ func GetOperatorCSVBySelector(dynamicClient dynamic.Interface, selector, namespa
 	}
 
 	return unstructuredObject, nil
+
+}
+
+// GetOperatorCSVByNamePrefix retrieves all operator csv's in a given namespace that has operatorNamePrefix.
+// Parameters:
+//   - dynamicClient: the Kubernetes dynamic client used to interact with the cluster.
+//   - operatorNamePrefix: the operator name prefix used to filter the csv.
+//   - namespace: the namespace in which to search for the csv.
+func GetOperatorCSVByNamePrefix(dynamicClient dynamic.Interface, operatorNamePrefix, namespace string) ([]unstructured.Unstructured, error) {
+
+	csvGVR := schema.GroupVersionResource{
+		Group:    utils.OperatorGroup,
+		Version:  utils.OperatorVersion,
+		Resource: utils.CSVResource,
+	}
+
+	unstructuredObject, err := dynamicClient.Resource(csvGVR).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var filteredList []unstructured.Unstructured
+
+	for _, item := range unstructuredObject.Items {
+		if strings.HasPrefix(item.GetName(), operatorNamePrefix) {
+			filteredList = append(filteredList, item)
+		}
+	}
+
+	return filteredList, nil
 
 }

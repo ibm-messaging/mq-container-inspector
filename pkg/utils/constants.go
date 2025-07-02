@@ -66,6 +66,10 @@ const ResourcePod = "pods"
 
 const ExecSubcommand = "exec"
 
+const CommonServicesOperatorPrefix = "ibm-common-service-operator"
+
+const CP4iOperatorPrefix = "ibm-integration-platform-navigator"
+
 const WebConsoleLogPath = "var/mqm/web/installations/Installation1/servers/mqweb/logs/console.log"
 
 const WebConsoleMessageLogPath = "var/mqm/web/installations/Installation1/servers/mqweb/logs/messages.log"

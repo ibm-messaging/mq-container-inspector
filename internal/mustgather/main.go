@@ -49,6 +49,12 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return err
 	}
 
+	// collect the cp4i csv details
+	err = gatherCp4IOperatorCSVToFiles(cfg, flags)
+	if err != nil {
+		return err
+	}
+
 	// collect web-console logs
 	err = gatherMQWebConsoleLogsToFiles(cfg, flags)
 	if err != nil {
