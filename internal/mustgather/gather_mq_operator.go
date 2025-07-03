@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/csv"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/deployment"
@@ -13,6 +14,15 @@ import (
 )
 
 func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, flags utils.MustGatherFlags) error {
+
+	// create mq-operator directory to store mq-operator files
+	mqOperatorDirectory := filepath.Join(flags.OutputDir, "mq-operator")
+	directoryExist := utils.CheckIfDirectoryExist(mqOperatorDirectory)
+	if !directoryExist {
+		if err := utils.CreateDirectory(mqOperatorDirectory, 0775); err != nil {
+			return err
+		}
+	}
 
 	// operatorLabelSelector filters for the IBM MQ operator details using two labels:
 	//   - "app.kubernetes.io/name=ibm-mq": matches IBM MQ resources.
@@ -35,7 +45,7 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	// get the operator CSV details
 	csvDetailsList, err := csv.GetOperatorCSVBySelector(dynamicClient, operatorCSVLabelSelector, operatorNamespace)
 	if err == nil && csvDetailsList != nil {
-		if err := csv.WriteCSVYamlsToFile(csvDetailsList.Items, mqOperatorCSVFileNameFormat, flags.OutputDir); err != nil {
+		if err := csv.WriteCSVYamlsToFile(csvDetailsList.Items, mqOperatorCSVFileNameFormat, mqOperatorDirectory); err != nil {
 			return err
 		}
 	} else {
@@ -49,7 +59,7 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	}
 
 	// write the mq-deployments in their respective yamls
-	if err := deployment.WriteDeploymentsToFile(deploymentList, mqOperatorDeploymentFileNameFormat, flags.OutputDir); err != nil {
+	if err := deployment.WriteDeploymentsToFile(deploymentList, mqOperatorDeploymentFileNameFormat, mqOperatorDirectory); err != nil {
 		return err
 	}
 
@@ -60,7 +70,7 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	}
 
 	// write the mq-operator pod logs in their respective log files
-	if err := pods.WritePodLogsToFile(podLogs, mqOperatorPodLogsFileNameFormat, flags.OutputDir); err != nil {
+	if err := pods.WritePodLogsToFile(podLogs, mqOperatorPodLogsFileNameFormat, mqOperatorDirectory); err != nil {
 		return err
 	}
 

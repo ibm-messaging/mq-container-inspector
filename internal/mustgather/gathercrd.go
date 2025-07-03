@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/crd"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
@@ -9,6 +10,15 @@ import (
 )
 
 func gatherCrdToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFlags) error {
+
+	// create crd directory to store crd files
+	crdDirectory := filepath.Join(flags.OutputDir, "crds")
+	directoryExist := utils.CheckIfDirectoryExist(crdDirectory)
+	if !directoryExist {
+		if err := utils.CreateDirectory(crdDirectory, 0775); err != nil {
+			return err
+		}
+	}
 
 	// get QueueManager details by QueueManager name
 	queueManagerDetailsMap, err := crd.GetQueueManagerCrdDetailsByName(dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace)
@@ -23,7 +33,7 @@ func gatherCrdToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 
 	//write the QueueManager details to its yaml
 	fileNameFormat := "%s.yaml"
-	if err := crd.WriteQueueManagerCrdYamlToFiles(queueManagerDetailsMap, fileNameFormat, flags.OutputDir, flags.QueueManagerName); err != nil {
+	if err := crd.WriteQueueManagerCrdYamlToFiles(queueManagerDetailsMap, fileNameFormat, crdDirectory, flags.QueueManagerName); err != nil {
 		return err
 	}
 
@@ -38,7 +48,7 @@ func gatherCrdToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 
 		// write the IntegrationKecloakClient details to its yaml
 		integrationkeycloakClientFileNameFormat := "%s-integration-keycloak-client.yaml"
-		if err := crd.WriteIntegrationKeycloakClientCrdYamlToFiles(integrationKeycloakClientDetails, integrationkeycloakClientFileNameFormat, flags.OutputDir); err != nil {
+		if err := crd.WriteIntegrationKeycloakClientCrdYamlToFiles(integrationKeycloakClientDetails, integrationkeycloakClientFileNameFormat, crdDirectory); err != nil {
 			return err
 		}
 	}

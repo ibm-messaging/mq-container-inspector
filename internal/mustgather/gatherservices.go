@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/service"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
@@ -9,6 +10,15 @@ import (
 )
 
 func gatherServicesToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags) error {
+
+	// create services directory to store service files
+	serviceDirectory := filepath.Join(flags.OutputDir, "services")
+	directoryExist := utils.CheckIfDirectoryExist(serviceDirectory)
+	if !directoryExist {
+		if err := utils.CreateDirectory(serviceDirectory, 0775); err != nil {
+			return err
+		}
+	}
 
 	serviceLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 
@@ -20,7 +30,7 @@ func gatherServicesToFiles(coreClient kubernetes.Interface, flags utils.MustGath
 
 	// write the services to their respective yaml files
 	serviceDetailsFileNameFormat := "%s-service.yaml"
-	if err := service.WriteServiceYamlsToFile(serviceList, serviceDetailsFileNameFormat, flags.OutputDir); err != nil {
+	if err := service.WriteServiceYamlsToFile(serviceList, serviceDetailsFileNameFormat, serviceDirectory); err != nil {
 		return err
 	}
 

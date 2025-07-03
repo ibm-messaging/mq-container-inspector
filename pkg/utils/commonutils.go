@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -46,4 +48,16 @@ type ExecConfig struct {
 	Namespace        string
 	ContainerName    string
 	Cmd              []string
+}
+
+var CheckIfDirectoryExist = func(dir string) bool {
+	_, err := os.Stat(dir)
+	return !os.IsNotExist(err)
+}
+
+var CreateDirectory = func(dir string, perm fs.FileMode) error {
+	if err := os.Mkdir(dir, perm); err != nil {
+		return fmt.Errorf("error creating output-directory(%s): %v", dir, err)
+	}
+	return nil
 }

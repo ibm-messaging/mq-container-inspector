@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pvc"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
@@ -9,6 +10,15 @@ import (
 )
 
 func gatherPVCToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags) error {
+
+	// create pvc directory to store pvc files
+	pvcDirectory := filepath.Join(flags.OutputDir, "pvcs")
+	directoryExist := utils.CheckIfDirectoryExist(pvcDirectory)
+	if !directoryExist {
+		if err := utils.CreateDirectory(pvcDirectory, 0775); err != nil {
+			return err
+		}
+	}
 
 	pvcLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 
@@ -20,7 +30,7 @@ func gatherPVCToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFla
 
 	// write the pvc's to their respective yaml files
 	pvcYamlFileNameFormat := "%s-pvc.yaml"
-	if err := pvc.WritePVCYamlsToFile(pvcList, pvcYamlFileNameFormat, flags.OutputDir); err != nil {
+	if err := pvc.WritePVCYamlsToFile(pvcList, pvcYamlFileNameFormat, pvcDirectory); err != nil {
 		return err
 	}
 

@@ -14,6 +14,15 @@ import (
 // Copies the MQ Webconsole console.log and messages.log to the must gather OutputDir
 func gatherMQWebConsoleLogsToFiles(cfg *rest.Config, coreClient kubernetes.Interface, flags utils.MustGatherFlags) error {
 
+	// create webconsole directory to store webconsole files
+	webconsoleDirectory := filepath.Join(flags.OutputDir, "webconsole")
+	directoryExists := utils.CheckIfDirectoryExist(webconsoleDirectory)
+	if !directoryExists {
+		if err := utils.CreateDirectory(webconsoleDirectory, 0775); err != nil {
+			return err
+		}
+	}
+
 	qmLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 
 	// Get the queue manager pods
@@ -33,7 +42,7 @@ func gatherMQWebConsoleLogsToFiles(cfg *rest.Config, coreClient kubernetes.Inter
 			ContainerName: utils.QmgrContainer,
 		}
 
-		consoleOutputFilePath := filepath.Join(flags.OutputDir, fmt.Sprintf("web-%s-console.log", copyConfig.PodName))
+		consoleOutputFilePath := filepath.Join(webconsoleDirectory, fmt.Sprintf("web-%s-console.log", copyConfig.PodName))
 
 		if err := container.CopyPathToFile(copyConfig, consoleOutputFilePath, 10); err != nil {
 			fmt.Printf("unable to copy console.log for pod %q: %v\n", pod.Name, err)
@@ -49,7 +58,7 @@ func gatherMQWebConsoleLogsToFiles(cfg *rest.Config, coreClient kubernetes.Inter
 			ContainerName: utils.QmgrContainer,
 		}
 
-		messagesOutputFilePath := filepath.Join(flags.OutputDir, fmt.Sprintf("web-%s-messages.log", copyConfig.PodName))
+		messagesOutputFilePath := filepath.Join(webconsoleDirectory, fmt.Sprintf("web-%s-messages.log", copyConfig.PodName))
 
 		if err := container.CopyPathToFile(copyConfig, messagesOutputFilePath, 10); err != nil {
 			fmt.Printf("unable to copy messages.log for pod %q: %v\n", pod.Name, err)

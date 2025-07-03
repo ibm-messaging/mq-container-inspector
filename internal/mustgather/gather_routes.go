@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"path/filepath"
 
 	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
@@ -23,6 +24,15 @@ func gatherRoutesToFiles(cfg *rest.Config, routeClient routeClient.Interface, fl
 		return nil
 	}
 
+	// create routes directory to store routes files
+	routesDirectory := filepath.Join(flags.OutputDir, "routes")
+	directoryExist := utils.CheckIfDirectoryExist(routesDirectory)
+	if !directoryExist {
+		if err := utils.CreateDirectory(routesDirectory, 0775); err != nil {
+			return err
+		}
+	}
+
 	routeLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 	routeFieldSelector := fmt.Sprintf("spec.to.name=%s-ibm-mq", flags.QueueManagerName)
 
@@ -34,7 +44,7 @@ func gatherRoutesToFiles(cfg *rest.Config, routeClient routeClient.Interface, fl
 
 	// write the route details to their respective yamls
 	routesDetailsBySelectorFileNameFormat := "%s-routes.yaml"
-	if err := routes.WriteRouteDetailsBySelectorToFile(routeListBySelector, routesDetailsBySelectorFileNameFormat, flags.OutputDir); err != nil {
+	if err := routes.WriteRouteDetailsBySelectorToFile(routeListBySelector, routesDetailsBySelectorFileNameFormat, routesDirectory); err != nil {
 		return err
 	}
 
@@ -46,7 +56,7 @@ func gatherRoutesToFiles(cfg *rest.Config, routeClient routeClient.Interface, fl
 
 	// write the route details to their respective yamls
 	routesDetailsByFieldSelectorFileNameFormat := "%s-routes-to-qm.yaml"
-	if err := routes.WriteRouteDetailsBySelectorToFile(routeListByFieldSelector, routesDetailsByFieldSelectorFileNameFormat, flags.OutputDir); err != nil {
+	if err := routes.WriteRouteDetailsBySelectorToFile(routeListByFieldSelector, routesDetailsByFieldSelectorFileNameFormat, routesDirectory); err != nil {
 		return err
 	}
 

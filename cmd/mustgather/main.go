@@ -91,10 +91,10 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 	}
 
 	// If OutputDir doesnot exist create the directory
-	if _, err := os.Stat(flags.OutputDir); os.IsNotExist(err) {
-		err = os.Mkdir(flags.OutputDir, 0755)
-		if err != nil {
-			return fmt.Errorf("error creating output-directory(%s): %v", flags.OutputDir, err)
+	directoryExist := utils.CheckIfDirectoryExist(flags.OutputDir)
+	if !directoryExist {
+		if err := utils.CreateDirectory(flags.OutputDir, 0775); err != nil {
+			return err
 		}
 	}
 
