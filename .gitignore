@@ -16,3 +16,9 @@
 *.out
 cover.html
 build/
+
+# Go build binary
+mq-inspector
+
+# Default Must gather outputs folders
+Must_Gather_*
