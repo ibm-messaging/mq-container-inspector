@@ -4,18 +4,11 @@ import (
 	"fmt"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/csv"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/dynamic"
 )
 
-func gatherCp4IOperatorCSVToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
-
-	// build dynamic client from config
-	dynamicClient, err := kubeclient.BuildKubernetesDynamicClientFromConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("error building dynamic client from config: %v", err)
-	}
+func gatherCp4IOperatorCSVToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFlags) error {
 
 	fileNameFormat := "%s-csv.yaml"
 

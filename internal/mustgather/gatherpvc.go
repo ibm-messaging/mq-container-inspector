@@ -3,19 +3,12 @@ package mustgather
 import (
 	"fmt"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pvc"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/kubernetes"
 )
 
-func gatherPVCToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
-
-	// build the kubernetes client from config
-	coreClient, err := kubeclient.BuildKubernetesClientFromConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("error building core client from config: %v", err)
-	}
+func gatherPVCToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags) error {
 
 	pvcLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 

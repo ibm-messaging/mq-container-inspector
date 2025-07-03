@@ -3,13 +3,14 @@ package mustgather
 import (
 	"fmt"
 
+	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/routes"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	"k8s.io/client-go/rest"
 )
 
-func gatherRoutesToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
+func gatherRoutesToFiles(cfg *rest.Config, routeClient routeClient.Interface, flags utils.MustGatherFlags) error {
 
 	// since routes are OCP specific, check if routes exist on the cluster
 	isRoutePresent, err := checkIfRoutesArePresentInCluster(cfg)
@@ -20,12 +21,6 @@ func gatherRoutesToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if !isRoutePresent {
 		fmt.Printf("routes %s are not present on this cluster\n", utils.RouteAPIGroupName)
 		return nil
-	}
-
-	// build a route client
-	routeClient, err := kubeclient.BuildRouteClientFromConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("error building route client: %v", err)
 	}
 
 	routeLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)

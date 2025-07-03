@@ -3,19 +3,12 @@ package mustgather
 import (
 	"fmt"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/statefulset"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/kubernetes"
 )
 
-func gatherStatefulSetToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
-
-	// build the kubernetes core client
-	coreClient, err := kubeclient.BuildKubernetesClientFromConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("error building core client from config: %v", err)
-	}
+func gatherStatefulSetToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags) error {
 
 	statefulSetLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 

@@ -3,19 +3,12 @@ package mustgather
 import (
 	"fmt"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/service"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/kubernetes"
 )
 
-func gatherServicesToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
-
-	// build the kubernetes core client
-	coreClient, err := kubeclient.BuildKubernetesClientFromConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("error building core client from config: %v", err)
-	}
+func gatherServicesToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags) error {
 
 	serviceLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 

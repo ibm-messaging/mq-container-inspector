@@ -5,28 +5,14 @@ import (
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/csv"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/deployment"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/namespace"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
-func gatherMQOperatorToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
-
-	// build core client from config
-	coreClient, err := kubeclient.BuildKubernetesClientFromConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("error building core client from config: %v", err)
-	}
-
-	// build dynamic client from config
-	dynamicClient, err := kubeclient.BuildKubernetesDynamicClientFromConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("error building dynamic client from config: %v", err)
-	}
+func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, flags utils.MustGatherFlags) error {
 
 	// operatorLabelSelector filters for the IBM MQ operator details using two labels:
 	//   - "app.kubernetes.io/name=ibm-mq": matches IBM MQ resources.

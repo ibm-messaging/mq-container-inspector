@@ -3,20 +3,13 @@ package mustgather
 import (
 	"fmt"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/namespace"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/kubernetes"
 )
 
-func gatherPodsToFiles(cfg *rest.Config, flags utils.MustGatherFlags) error {
-
-	// build the kubernetes client from config
-	client, err := kubeclient.BuildKubernetesClientFromConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("error building core client from config: %v", err)
-	}
+func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags) error {
 
 	// check if QueueManager and MQ Operator namespace exists
 	namespaceExists, err := namespace.DoesNamespacesExist(client, flags.QueueManagerNamespace)
