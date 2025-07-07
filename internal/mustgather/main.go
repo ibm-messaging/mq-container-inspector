@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/namespace"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	"k8s.io/client-go/rest"
 )
@@ -26,14 +27,22 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return fmt.Errorf("error building route client: %v", err)
 	}
 
-	// collect pods must-gathers
-	err = gatherPodsToFiles(coreClient, flags)
+	// check if the provided queue-manager namespace exists on the cluster
+	namespaceExists, err := namespace.DoesNamespacesExist(coreClient, flags.QueueManagerNamespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while checking if the namespace %v exists: %v", flags.QueueManagerNamespace, err)
+	} else if !namespaceExists {
+		return fmt.Errorf("provided queue-manager namespace %v was not found on the currently logged-in cluster", flags.QueueManagerNamespace)
 	}
 
 	// collect crd must-gathers
 	err = gatherCrdToFiles(dynamicClient, flags)
+	if err != nil {
+		return err
+	}
+
+	// collect pods must-gathers
+	err = gatherPodsToFiles(coreClient, flags)
 	if err != nil {
 		return err
 	}
