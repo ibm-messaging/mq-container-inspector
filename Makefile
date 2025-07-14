@@ -16,3 +16,6 @@
 
 build:
 	go build
+
+ run:
+	./mq-inspector test
