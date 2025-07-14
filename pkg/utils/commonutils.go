@@ -56,7 +56,7 @@ var CheckIfDirectoryExist = func(dir string) bool {
 }
 
 var CreateDirectory = func(dir string, perm fs.FileMode) error {
-	if err := os.Mkdir(dir, perm); err != nil {
+	if err := os.MkdirAll(dir, perm); err != nil {
 		return fmt.Errorf("error creating output-directory(%s): %v", dir, err)
 	}
 	return nil

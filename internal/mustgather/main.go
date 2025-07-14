@@ -5,6 +5,7 @@ import (
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/namespace"
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/tarzip"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	"k8s.io/client-go/rest"
 )
@@ -93,6 +94,13 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	err = gatherRunmqrasLogToFiles(cfg, coreClient, flags)
 	if err != nil {
 		return err
+	}
+
+	// if tar is enabled, then zip the must-gather output
+	if flags.TarZip {
+		if err := tarzip.TarZipFolder(flags.OutputDir); err != nil {
+			return fmt.Errorf("error tar zipping the collected must-gather at path %s: %v", flags.OutputDir, err)
+		}
 	}
 
 	return nil

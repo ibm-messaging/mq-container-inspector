@@ -80,15 +80,20 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 		flags.KubeconfigPath = filepath.Join(homeDir, ".kube/config")
 	}
 
+	timestamp := utils.GetCurrentTimestamp(utils.TimestampFormat)
 	if flags.OutputDir == "" {
 		currentWorkingDir, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("error getting user's current working directory: %v", err)
 		}
 
-		timestamp := utils.GetCurrentTimestamp(utils.TimestampFormat)
 		flags.OutputDir = filepath.Join(currentWorkingDir, fmt.Sprintf("Must_Gather_%v", timestamp))
+		return nil
 	}
+
+	// create a directory inside the output directory, because we don't want to zip the entire outputDir, as it may contain other files apart from must-gather details
+	outputDir := filepath.Join(flags.OutputDir, fmt.Sprintf("Must_Gather_%v", timestamp))
+	flags.OutputDir = outputDir
 
 	// If OutputDir doesnot exist create the directory
 	directoryExist := utils.CheckIfDirectoryExist(flags.OutputDir)
