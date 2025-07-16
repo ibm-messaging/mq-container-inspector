@@ -53,7 +53,7 @@ func GetPodLogsBySelector(client kubernetes.Interface, selector, namespace, cont
 	for _, pod := range pods {
 
 		hasContainerRestarted := false
-		hasLastTerminationStateTerminated := false // for cases when the restartCount>0 but there are not previous logs
+		hasLastTerminationStateTerminated := false // for cases when the restartCount>0 but there are no previous logs
 
 		for _, container := range pod.Status.ContainerStatuses {
 			if container.Name == containerName {

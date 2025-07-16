@@ -1,4 +1,4 @@
-package crd
+package cr
 
 import (
 	"fmt"
@@ -20,11 +20,11 @@ func WriteQueueManagerCrdYamlToFiles(queueManagerDetailsMap map[string]interface
 
 	data, err := yaml.Marshal(queueManagerDetailsMap)
 	if err != nil {
-		return fmt.Errorf("error while marshalling yaml for queue-manager %s: %v", queueManagerName, err)
+		return fmt.Errorf("error while marshalling yaml for queue manager %s: %v", queueManagerName, err)
 	}
 
 	if err := os.WriteFile(fileName, data, 0660); err != nil {
-		return fmt.Errorf("error while writing queue-manager %s data to yaml file %s: %v", queueManagerName, fileName, err)
+		return fmt.Errorf("error while writing queue manager %s data to yaml file %s: %v", queueManagerName, fileName, err)
 	}
 
 	return nil
@@ -48,7 +48,7 @@ func WriteIntegrationKeycloakClientCrdYamlToFiles(integrationKeycloakClientDetai
 		}
 
 		if err := os.WriteFile(fileName, data, 0660); err != nil {
-			return fmt.Errorf("error while writing queue-manager %s data to yaml file %s: %v", integrationKeycloakClient.GetName(), fileName, err)
+			return fmt.Errorf("error while writing queue manager %s data to yaml file %s: %v", integrationKeycloakClient.GetName(), fileName, err)
 		}
 
 	}

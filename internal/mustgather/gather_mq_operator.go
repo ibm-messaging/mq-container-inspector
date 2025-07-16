@@ -35,22 +35,22 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	mqOperatorDeploymentFileNameFormat := "%s-deployment.yaml"
 	mqOperatorPodLogsFileNameFormat := "%s-%s-pod-log.txt"
 
-	// identify the operator namespace
-	operatorNamespace, err := identifyOperatorNamespace(coreClient, dynamicClient, operatorLabelSelector, operatorCSVLabelSelector, flags)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("mq-operator deployment found in %s namespace\n", operatorNamespace)
-
 	// get the operator CSV details
-	csvDetailsList, err := csv.GetOperatorCSVBySelector(dynamicClient, operatorCSVLabelSelector, operatorNamespace)
+	csvDetailsList, err := csv.GetOperatorCSVBySelector(dynamicClient, operatorCSVLabelSelector, flags.QueueManagerNamespace)
 	if err == nil && csvDetailsList != nil {
 		if err := csv.WriteCSVYamlsToFile(csvDetailsList.Items, mqOperatorCSVFileNameFormat, mqOperatorDirectory); err != nil {
 			return err
 		}
 	} else {
-		fmt.Printf("mq-operator CSV not found in namespace %q: %v\n", operatorNamespace, err)
+		fmt.Printf("mq-operator CSV not found in namespace %q: %v\n", flags.QueueManagerNamespace, err)
 	}
+
+	// identify the operator namespace
+	operatorNamespace, err := identifyOperatorNamespace(coreClient, operatorLabelSelector, flags)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("mq-operator deployment found in %s namespace\n", operatorNamespace)
 
 	// get the mq-operator deployment details
 	deploymentList, err := deployment.GetDeploymentsBySelector(coreClient, operatorLabelSelector, operatorNamespace)
@@ -77,7 +77,7 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	return nil
 }
 
-func identifyOperatorNamespace(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, operatorLabelSelector, operatorCSVLabelSelector string, flags utils.MustGatherFlags) (string, error) {
+func identifyOperatorNamespace(coreClient kubernetes.Interface, operatorLabelSelector string, flags utils.MustGatherFlags) (string, error) {
 
 	if flags.OperatorNamespace != "" {
 		// check if the operator-namespace is provided
@@ -93,10 +93,6 @@ func identifyOperatorNamespace(coreClient kubernetes.Interface, dynamicClient dy
 	}
 
 	// check in QueueManagerNamespace
-	if foundMQOperatorCSV(dynamicClient, operatorCSVLabelSelector, flags.QueueManagerNamespace) {
-		return flags.QueueManagerNamespace, nil
-	}
-
 	if foundMQOperatorDeployment(coreClient, operatorLabelSelector, flags.QueueManagerNamespace) {
 		return flags.QueueManagerNamespace, nil
 	}
@@ -104,11 +100,7 @@ func identifyOperatorNamespace(coreClient kubernetes.Interface, dynamicClient dy
 	// check in GlobalOperatorNamespace exist, because it will only exist for OCP deployments
 	if namespaceExist, _ := namespace.DoesNamespacesExist(coreClient, utils.GlobalOperatorNamespace); namespaceExist {
 
-		if foundMQOperatorCSV(dynamicClient, operatorCSVLabelSelector, flags.QueueManagerNamespace) {
-			return utils.GlobalOperatorNamespace, nil
-		}
-
-		if foundMQOperatorDeployment(coreClient, operatorLabelSelector, flags.QueueManagerNamespace) {
+		if foundMQOperatorDeployment(coreClient, operatorLabelSelector, utils.GlobalOperatorNamespace) {
 			return utils.GlobalOperatorNamespace, nil
 		}
 
@@ -121,9 +113,4 @@ func identifyOperatorNamespace(coreClient kubernetes.Interface, dynamicClient dy
 func foundMQOperatorDeployment(client kubernetes.Interface, selector, namespace string) bool {
 	deploymentList, err := deployment.GetDeploymentsBySelector(client, selector, namespace)
 	return err == nil && len(deploymentList) > 0
-}
-
-func foundMQOperatorCSV(client dynamic.Interface, selector, namespace string) bool {
-	csvList, _ := csv.GetOperatorCSVBySelector(client, selector, namespace)
-	return csvList != nil && len(csvList.Items) > 0
 }

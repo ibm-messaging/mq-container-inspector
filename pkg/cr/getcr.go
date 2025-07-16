@@ -1,4 +1,4 @@
-package crd
+package cr
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-// GetQueueManagerCrdDetailsByName retrieves the details of the QueueManager CRD with the specified name in the given namespace.
+// GetQueueManagerCrDetailsByName retrieves the details of the QueueManager CR with the specified name in the given namespace.
 // Parameters:
-//   - dynamicClient:    the Kubernetes dynamic client used to fetch CRD resources.
-//   - queueManagerName: the name of the QueueManager CRD to retrieve.
-//   - namespace:        the namespace in which to look up the QueueManager CRD.
-func GetQueueManagerCrdDetailsByName(dynamicClient dynamic.Interface, queueManagerName, namespace string) (map[string]interface{}, error) {
+//   - dynamicClient:    the Kubernetes dynamic client used to fetch CR resources.
+//   - queueManagerName: the name of the QueueManager CR to retrieve.
+//   - namespace:        the namespace in which to look up the QueueManager CR.
+func GetQueueManagerCrDetailsByName(dynamicClient dynamic.Interface, queueManagerName, namespace string) (map[string]interface{}, error) {
 
 	queueManagerGVR := schema.GroupVersionResource{
 		Group:    utils.QmgrGroup,
@@ -33,12 +33,12 @@ func GetQueueManagerCrdDetailsByName(dynamicClient dynamic.Interface, queueManag
 
 }
 
-// GetIntegrationKeycloakClientDetailsByOwnerReferences retrieves the details of the IntegrationKeycloakClient CRD with the specified owner-references in the given namespace.
+// GetIntegrationKeycloakClientDetailsByOwnerReferences retrieves the details of the IntegrationKeycloakClient CR with the specified owner-references in the given namespace.
 // Returns (nil,nil) if there are no IntegrationKeycloakClients found.
 // Parameters:
-//   - dynamicClient:    the Kubernetes dynamic client used to fetch CRD resources.
-//   - queueManagerName: the name of the QueueManager CRD which will be in owner-reference of the IntegrationKeycloakClient CRD.
-//   - namespace:        the namespace in which to look up the IntegrationKeycloakClient CRD.
+//   - dynamicClient:    the Kubernetes dynamic client used to fetch CR resources.
+//   - queueManagerName: the name of the QueueManager CR which will be in owner-reference of the IntegrationKeycloakClient CR.
+//   - namespace:        the namespace in which to look up the IntegrationKeycloakClient CR.
 func GetIntegrationKeycloakClientDetailsByOwnerReferences(dynamicClient dynamic.Interface, queueManagerName, namespace string) ([]*unstructured.Unstructured, error) {
 
 	integrationKeycloakClientGVR := schema.GroupVersionResource{
@@ -67,5 +67,27 @@ func GetIntegrationKeycloakClientDetailsByOwnerReferences(dynamicClient dynamic.
 	}
 
 	return itegrationKeycloakClientList, nil
+
+}
+
+// ListQueueManagersInNamespace retrieves all the QueueManagers in the given namespace.
+// Parameters:
+//   - dynamicClient:    the Kubernetes dynamic client used to fetch CR resources.
+//   - namespace:        the namespace in which to look up the QueueManager CR.
+func ListQueueManagersInNamespace(dynamicClient dynamic.Interface, namespace string) ([]unstructured.Unstructured, error) {
+
+	queueManagerGVR := schema.GroupVersionResource{
+		Group:    utils.QmgrGroup,
+		Version:  utils.QmgrVersion,
+		Resource: utils.QmgrResource,
+	}
+
+	unstructuredObject, err := dynamicClient.Resource(queueManagerGVR).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return unstructuredObject.Items, err
 
 }

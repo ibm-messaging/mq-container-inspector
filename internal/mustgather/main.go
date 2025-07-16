@@ -28,16 +28,16 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		return fmt.Errorf("error building route client: %v", err)
 	}
 
-	// check if the provided queue-manager namespace exists on the cluster
+	// check if the provided queue manager namespace exists on the cluster
 	namespaceExists, err := namespace.DoesNamespacesExist(coreClient, flags.QueueManagerNamespace)
 	if err != nil {
 		return fmt.Errorf("error while checking if the namespace %v exists: %v", flags.QueueManagerNamespace, err)
 	} else if !namespaceExists {
-		return fmt.Errorf("provided queue-manager namespace %v was not found on the currently logged-in cluster", flags.QueueManagerNamespace)
+		return fmt.Errorf("provided queue manager namespace %v was not found on the currently logged-in cluster", flags.QueueManagerNamespace)
 	}
 
-	// collect crd must-gathers
-	err = gatherCrdToFiles(dynamicClient, flags)
+	// collect cr must-gathers
+	err = gatherCRsToFiles(dynamicClient, flags)
 	if err != nil {
 		return err
 	}

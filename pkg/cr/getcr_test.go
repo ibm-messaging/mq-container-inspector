@@ -1,4 +1,4 @@
-package crd
+package cr
 
 import (
 	"context"
@@ -35,14 +35,14 @@ func TestGetQueueManagerCrdDetailsByName(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	queueManagerDetails, err := GetQueueManagerCrdDetailsByName(dynamicFakeClient, queueManagerName, namespace)
+	queueManagerDetails, err := GetQueueManagerCrDetailsByName(dynamicFakeClient, queueManagerName, namespace)
 	if err != nil {
-		t.Errorf("error getting queue-manager %s by name: %v", queueManagerName, err)
+		t.Errorf("error getting queue manager %s by name: %v", queueManagerName, err)
 	}
 
 	gotQueueManagerName := getQueueManagerName(queueManagerDetails)
 	if gotQueueManagerName != expectedQueueManagerName {
-		t.Errorf("got %s queue-manager, expected %s queue-manager", gotQueueManagerName, expectedQueueManagerName)
+		t.Errorf("got %s queue manager, expected %s queue manager", gotQueueManagerName, expectedQueueManagerName)
 	}
 
 }
@@ -66,7 +66,7 @@ func TestGetIntegrationKeycloakClientDetailsByOwnerReferences(t *testing.T) {
 
 	result, err := GetIntegrationKeycloakClientDetailsByOwnerReferences(dynamicFakeClient, queueManagerName, namespace)
 	if err != nil {
-		t.Errorf("error getting integration-keycloak-client with owner queue-manager %s: %v", queueManagerName, err)
+		t.Errorf("error getting integration-keycloak-client with owner queue manager %s: %v", queueManagerName, err)
 	}
 
 	if got := len(result); got != expectedintegrationKeycloakClientCount {
@@ -92,7 +92,7 @@ func getExpectedQueueManagerNameFromFakeDynamicClient(dynamicFakeClient *fake.Fa
 
 	unstructuredObject, err := dynamicFakeClient.Resource(queueManagerGVR).Namespace(namespace).Get(context.TODO(), queueManagerName, metav1.GetOptions{})
 	if err != nil {
-		return "", fmt.Errorf("error getting queue-manager %s from dynamic fake client: %v", queueManagerName, err)
+		return "", fmt.Errorf("error getting queue manager %s from dynamic fake client: %v", queueManagerName, err)
 	}
 
 	return unstructuredObject.GetName(), nil
