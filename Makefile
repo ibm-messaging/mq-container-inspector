@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: build
+.PHONY: build build-amd64 build-s390x build-ppc64le
 
 build:
 	go build
