@@ -1,5 +1,5 @@
 # IBM MQ Inspector
-Test
+Testing
 ## Overview
 
 A collection of tools for interacting with IBM® MQ queue managers running in containers.
