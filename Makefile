@@ -17,5 +17,14 @@
 build:
 	go build
 
+build-amd64:
+	GOOS=linux GOARCH=amd64 go build
+
+build-s390x:
+	GOOS=linux GOARCH=s390x go build
+
+build-ppc64le:
+	GOOS=linux GOARCH=ppc64le go build
+
  run:
 	./mq-inspector test
