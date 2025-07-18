@@ -12,10 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: build
+.PHONY: build build-amd64 build-s390x build-ppc64le
 
 build:
 	go build
+
+build-amd64:
+	GOOS=linux GOARCH=amd64 go build
+
+build-s390x:
+	GOOS=linux GOARCH=s390x go build
+
+build-ppc64le:
+	GOOS=linux GOARCH=ppc64le go build
 
  run:
 	./mq-inspector test
