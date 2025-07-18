@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/statefulset"
@@ -9,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func gatherStatefulSetToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags) error {
+func gatherStatefulSetToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
 
 	// create StatefulSet directory to store StatefulSet files
 	statefulSetDirectory := filepath.Join(flags.OutputDir, "statefulsets")
@@ -37,25 +38,31 @@ func gatherStatefulSetToFiles(coreClient kubernetes.Interface, flags utils.MustG
 	// get StatefulSet revisions by selector
 	statefulSetRevisionList, err := statefulset.GetStatefulSetRevisionsBySelector(coreClient, statefulSetLabelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		return fmt.Errorf("error while fetching StatefulSet revisions with selector %s: %v", statefulSetLabelSelector, err)
+		logger.Error(fmt.Sprintf("error while fetching StatefulSet revisions with selector %s: %v", statefulSetLabelSelector, err))
 	}
 
 	// write the StatefulSet revisions to their yamls
 	statefulSetRevisionsFileNameFormat := "%s-statefulset-revisions.yaml"
 	if err := statefulset.WriteStatefulSetRevisionYamlsToFile(statefulSetRevisionList, statefulSetRevisionsFileNameFormat, statefulSetDirectory); err != nil {
-		return err
+		logger.Error(err.Error())
 	}
 
 	// get StatefulSet events by selector
 	statefulSetEvents, err := statefulset.GetStatefulSetEventsBySelector(coreClient, statefulSetLabelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		return fmt.Errorf("error while fetching StatefulSet events with selector %s: %v", statefulSetLabelSelector, err)
+		logger.Error(fmt.Sprintf("error while fetching StatefulSet events with selector %s: %v", statefulSetLabelSelector, err))
 	}
 
 	// write the StatefulSet events to their files
 	statefulSetEventsFileNameFormat := "%s-statefulset-events.txt"
 	if err := statefulset.WriteStatefulSetEventsToFile(statefulSetEvents, statefulSetEventsFileNameFormat, statefulSetDirectory); err != nil {
-		return err
+		logger.Error(err.Error())
+	}
+
+	if fileCount, err := utils.GetFileCountInDirectory(statefulSetDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("StatefulSet details: %s: Total Files: %d", statefulSetDirectory, fileCount))
 	}
 
 	return nil

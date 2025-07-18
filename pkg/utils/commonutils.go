@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -60,4 +61,66 @@ var CreateDirectory = func(dir string, perm fs.FileMode) error {
 		return fmt.Errorf("error creating output-directory(%s): %v", dir, err)
 	}
 	return nil
+}
+
+var GetLogFilePath = func(outputDirectory, logFileName string) string {
+	return filepath.Join(outputDirectory, logFileName)
+}
+
+var InitializeLogFile = func(outputDirectory, logFileName string) (*os.File, error) {
+	logFilePath := GetLogFilePath(outputDirectory, logFileName)
+
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+	if err != nil {
+		return nil, fmt.Errorf("error creating logfile %s in base-directory %s: %v", logFileName, outputDirectory, err)
+	}
+	return logFile, nil
+
+}
+
+var GetFileCountInDirectory = func(directoryName string) (int, error) {
+
+	entries, err := os.ReadDir(directoryName)
+	if err != nil {
+		return 0, fmt.Errorf("error while reading %s directory: %v", directoryName, err)
+	}
+
+	fileCount := 0
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			fileCount++
+		}
+	}
+
+	return fileCount, nil
+
+}
+
+var DeleteEmptyDirectories = func(directoryName string, logger *slog.Logger) error {
+
+	entries, err := os.ReadDir(directoryName)
+	if err != nil {
+		return fmt.Errorf("error while reading %s directory", directoryName)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			entryPath := filepath.Join(directoryName, entry.Name())
+			fileCount, err := GetFileCountInDirectory(entryPath)
+			if err != nil {
+				return err
+			}
+
+			if fileCount == 0 {
+				if err := os.RemoveAll(entryPath); err != nil {
+					return err
+				} else {
+					logger.Info(fmt.Sprintf("Deleting empty directory: %s/%s", directoryName, entry.Name()))
+				}
+			}
+		}
+	}
+
+	return nil
+
 }

@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"text/tabwriter"
@@ -13,9 +14,9 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFlags) error {
+func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
 
-	// create crd directory to store crd files
+	// create cr directory to store cr files
 	crDirectory := filepath.Join(flags.OutputDir, "crs")
 	directoryExist := utils.CheckIfDirectoryExist(crDirectory)
 	if !directoryExist {
@@ -45,6 +46,8 @@ func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 
 	}
 
+	logger.Info(fmt.Sprintf("Found %s queue manager in %s namespace", flags.QueueManagerName, flags.QueueManagerNamespace))
+
 	//write the QueueManager details to its yaml
 	fileNameFormat := "%s.yaml"
 	if err := cr.WriteQueueManagerCrdYamlToFiles(queueManagerDetailsMap, fileNameFormat, crDirectory, flags.QueueManagerName); err != nil {
@@ -55,16 +58,24 @@ func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 	integrationKeycloakClientDetails, err := cr.GetIntegrationKeycloakClientDetailsByOwnerReferences(dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace)
 	if err != nil {
 		// if requested resource not found then just continue
-		fmt.Printf("integration-keycloak-client %s in the namespace %s: %v\n", flags.QueueManagerName, flags.QueueManagerNamespace, err)
+		logger.Info(fmt.Sprintf("integration-keycloak-client %s in the namespace %s: %v", flags.QueueManagerName, flags.QueueManagerNamespace, err))
 	}
 
 	if integrationKeycloakClientDetails != nil {
 
+		logger.Info(fmt.Sprintf("Found IntegrationKeycloakClient resource with %s queue manager as owner, in %s namespace", flags.QueueManagerName, flags.QueueManagerNamespace))
+
 		// write the IntegrationKecloakClient details to its yaml
 		integrationkeycloakClientFileNameFormat := "%s-integration-keycloak-client.yaml"
 		if err := cr.WriteIntegrationKeycloakClientCrdYamlToFiles(integrationKeycloakClientDetails, integrationkeycloakClientFileNameFormat, crDirectory); err != nil {
-			return err
+			logger.Error(err.Error())
 		}
+	}
+
+	if fileCount, err := utils.GetFileCountInDirectory(crDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("CR details: %s: Total Files: %d", crDirectory, fileCount))
 	}
 
 	return nil

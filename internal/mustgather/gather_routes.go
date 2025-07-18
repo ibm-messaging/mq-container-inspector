@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	routeClient "github.com/openshift/client-go/route/clientset/versioned"
@@ -11,18 +12,21 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func gatherRoutesToFiles(cfg *rest.Config, routeClient routeClient.Interface, flags utils.MustGatherFlags) error {
+func gatherRoutesToFiles(cfg *rest.Config, routeClient routeClient.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
 
 	// since routes are OCP specific, check if routes exist on the cluster
 	isRoutePresent, err := checkIfRoutesArePresentInCluster(cfg)
 	if err != nil {
+		logger.Error(err.Error())
 		return err
 	}
 
 	if !isRoutePresent {
-		fmt.Printf("routes %s are not present on this cluster\n", utils.RouteAPIGroupName)
+		logger.Info(fmt.Sprintf("routes %v are not present in this cluster", utils.RouteAPIGroupName))
 		return nil
 	}
+
+	logger.Info(fmt.Sprintf("routes %v are present in this cluster", utils.RouteAPIGroupName))
 
 	// create routes directory to store routes files
 	routesDirectory := filepath.Join(flags.OutputDir, "routes")
@@ -39,25 +43,33 @@ func gatherRoutesToFiles(cfg *rest.Config, routeClient routeClient.Interface, fl
 	// get routes created by mq-operator
 	routeListBySelector, err := routes.GetRouteDetailsBySelector(routeClient, routeLabelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		return fmt.Errorf("error while fetching routes with selector %s: %v", routeLabelSelector, err)
+		logger.Error(fmt.Sprintf("error while fetching routes with selector %s: %v", routeLabelSelector, err))
 	}
 
-	// write the route details to their respective yamls
-	routesDetailsBySelectorFileNameFormat := "%s-routes.yaml"
-	if err := routes.WriteRouteDetailsBySelectorToFile(routeListBySelector, routesDetailsBySelectorFileNameFormat, routesDirectory); err != nil {
-		return err
+	if routeListBySelector != nil {
+		// write the route details to their respective yamls
+		routesDetailsBySelectorFileNameFormat := "%s-routes.yaml"
+		if err := routes.WriteRouteDetailsBySelectorToFile(routeListBySelector, routesDetailsBySelectorFileNameFormat, routesDirectory); err != nil {
+			logger.Error(err.Error())
+		}
 	}
 
 	// get routes to the QueueManager
 	routeListByFieldSelector, err := routes.GetRouteDetailsByFieldSelector(routeClient, routeFieldSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		return fmt.Errorf("error while fetching routes with field selector %s: %v", routeFieldSelector, err)
+		logger.Error(fmt.Sprintf("error while fetching routes with field selector %s: %v", routeFieldSelector, err))
 	}
 
 	// write the route details to their respective yamls
 	routesDetailsByFieldSelectorFileNameFormat := "%s-routes-to-qm.yaml"
 	if err := routes.WriteRouteDetailsBySelectorToFile(routeListByFieldSelector, routesDetailsByFieldSelectorFileNameFormat, routesDirectory); err != nil {
-		return err
+		logger.Error(err.Error())
+	}
+
+	if fileCount, err := utils.GetFileCountInDirectory(routesDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("Route details: %s: Total Files: %d", routesDirectory, fileCount))
 	}
 
 	return nil

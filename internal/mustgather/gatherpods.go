@@ -2,15 +2,15 @@ package mustgather
 
 import (
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/namespace"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	"k8s.io/client-go/kubernetes"
 )
 
-func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags) error {
+func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
 
 	// create pods directory to store pod files
 	podsDirectory := filepath.Join(flags.OutputDir, "pods")
@@ -21,21 +21,16 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags)
 		}
 	}
 
-	// check if QueueManager and MQ Operator namespace exists
-	namespaceExists, err := namespace.DoesNamespacesExist(client, flags.QueueManagerNamespace)
-	if err != nil {
-		return fmt.Errorf("error while checking if the namespace %v exist: %v", flags.QueueManagerNamespace, err)
-	} else if !namespaceExists {
-		return fmt.Errorf("provided queue manager namespace %v was not found on the cluster", flags.QueueManagerNamespace)
-	}
-
 	podLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 
 	// get pods by selector
 	podList, err := pods.GetPodsBySelector(client, podLabelSelector, flags.QueueManagerNamespace)
 	if err != nil {
+		logger.Error(fmt.Sprintf("error while fetching pods with selector %s: %v", podLabelSelector, err))
 		return fmt.Errorf("error while fetching pods with selector %s: %v", podLabelSelector, err)
 	}
+
+	logger.Info(fmt.Sprintf("Found %d pods in %s namespace with %s label", len(podList), flags.QueueManagerNamespace, podLabelSelector))
 
 	// write the pod details to a file
 	podDetailsFileNameFormat := "pod-details.txt"
@@ -76,13 +71,19 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags)
 	// get pod events by selector
 	podEvents, err := pods.GetPodEventsBySelector(client, podLabelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		return fmt.Errorf("error while fetching pod events with selector %s: %v", podLabelSelector, err)
+		logger.Error(fmt.Sprintf("error while fetching pod events with selector %s: %v", podLabelSelector, err))
 	}
 
 	// write pod events to their files
 	podEventsFileNameFormat := "%s-pod-events.txt"
 	if err := pods.WritePodEventsToFile(podEvents, podEventsFileNameFormat, podsDirectory); err != nil {
-		return err
+		logger.Error(err.Error())
+	}
+
+	if fileCount, err := utils.GetFileCountInDirectory(podsDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("Pod details: %s: Total Files: %d", podsDirectory, fileCount))
 	}
 
 	return nil

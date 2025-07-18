@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/csv"
@@ -13,7 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, flags utils.MustGatherFlags) error {
+func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
 
 	// create mq-operator directory to store mq-operator files
 	mqOperatorDirectory := filepath.Join(flags.OutputDir, "mq-operator")
@@ -39,10 +40,10 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	csvDetailsList, err := csv.GetOperatorCSVBySelector(dynamicClient, operatorCSVLabelSelector, flags.QueueManagerNamespace)
 	if err == nil && csvDetailsList != nil {
 		if err := csv.WriteCSVYamlsToFile(csvDetailsList.Items, mqOperatorCSVFileNameFormat, mqOperatorDirectory); err != nil {
-			return err
+			logger.Error(err.Error())
 		}
 	} else {
-		fmt.Printf("mq-operator CSV not found in namespace %q: %v\n", flags.QueueManagerNamespace, err)
+		logger.Info(fmt.Sprintf("mq-operator CSV not found in namespace %s: %v", flags.QueueManagerNamespace, err))
 	}
 
 	// identify the operator namespace
@@ -50,7 +51,7 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	if err != nil {
 		return err
 	}
-	fmt.Printf("mq-operator deployment found in %s namespace\n", operatorNamespace)
+	logger.Info(fmt.Sprintf("mq-operator deployment found in %s namespace", operatorNamespace))
 
 	// get the mq-operator deployment details
 	deploymentList, err := deployment.GetDeploymentsBySelector(coreClient, operatorLabelSelector, operatorNamespace)
@@ -72,6 +73,12 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	// write the mq-operator pod logs in their respective log files
 	if err := pods.WritePodLogsToFile(podLogs, mqOperatorPodLogsFileNameFormat, mqOperatorDirectory); err != nil {
 		return err
+	}
+
+	if fileCount, err := utils.GetFileCountInDirectory(mqOperatorDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("MQ Operator details: %s: Total Files: %d", mqOperatorDirectory, fileCount))
 	}
 
 	return nil

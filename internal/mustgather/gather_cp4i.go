@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/csv"
@@ -9,7 +10,7 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-func gatherCp4IOperatorCSVToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFlags) error {
+func gatherCp4IOperatorCSVToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
 
 	// create cp4i directory to store cp4i files
 	cp4iDirectory := filepath.Join(flags.OutputDir, "cp4i")
@@ -26,12 +27,12 @@ func gatherCp4IOperatorCSVToFiles(dynamicClient dynamic.Interface, flags utils.M
 	commonServiceOperatorCSVList, err := csv.GetOperatorCSVByNamePrefix(dynamicClient, utils.CommonServicesOperatorPrefix, flags.QueueManagerNamespace)
 	if err != nil {
 		// continue if not found
-		fmt.Printf("could not find %s operator in %s namespace: %v", utils.CommonServicesOperatorPrefix, flags.QueueManagerNamespace, err)
+		logger.Info(fmt.Sprintf("could not find %s operator in %s namespace: %v\n", utils.CommonServicesOperatorPrefix, flags.QueueManagerNamespace, err))
 	}
 
 	if commonServiceOperatorCSVList != nil && len(commonServiceOperatorCSVList) > 0 {
 		if err := csv.WriteCSVYamlsToFile(commonServiceOperatorCSVList, fileNameFormat, cp4iDirectory); err != nil {
-			return err
+			logger.Error(err.Error())
 		}
 	}
 
@@ -39,13 +40,19 @@ func gatherCp4IOperatorCSVToFiles(dynamicClient dynamic.Interface, flags utils.M
 	pnOperatorCSVList, err := csv.GetOperatorCSVByNamePrefix(dynamicClient, utils.CP4iOperatorPrefix, flags.QueueManagerNamespace)
 	if err != nil {
 		// continue if not found
-		fmt.Printf("could not find %s operator in %s namespace: %v", utils.CP4iOperatorPrefix, flags.QueueManagerNamespace, err)
+		logger.Info(fmt.Sprintf("could not find %s operator in %s namespace: %v\n", utils.CP4iOperatorPrefix, flags.QueueManagerNamespace, err))
 	}
 
 	if pnOperatorCSVList != nil && len(pnOperatorCSVList) > 0 {
 		if err := csv.WriteCSVYamlsToFile(pnOperatorCSVList, fileNameFormat, cp4iDirectory); err != nil {
-			return err
+			logger.Error(err.Error())
 		}
+	}
+
+	if fileCount, err := utils.GetFileCountInDirectory(cp4iDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("CP4I details: %s: Total Files: %d", cp4iDirectory, fileCount))
 	}
 
 	return nil

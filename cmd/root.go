@@ -17,6 +17,7 @@ func Execute() {
 	}
 	switch args[0] {
 	case utils.MustGather:
+		fmt.Println("Starting Must-Gather tool")
 		err := cmd.MustGather(args[1:])
 		if err != nil {
 			fmt.Println(err)

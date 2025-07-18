@@ -2,6 +2,7 @@ package mustgather
 
 import (
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/service"
@@ -9,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func gatherServicesToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags) error {
+func gatherServicesToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
 
 	// create services directory to store service files
 	serviceDirectory := filepath.Join(flags.OutputDir, "services")
@@ -25,13 +26,19 @@ func gatherServicesToFiles(coreClient kubernetes.Interface, flags utils.MustGath
 	// get the service details by selector
 	serviceList, err := service.GetServiceDetailsBySelector(coreClient, serviceLabelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		return fmt.Errorf("error while fetching services with selector %s: %v", serviceLabelSelector, err)
+		logger.Error(fmt.Sprintf("error while fetching services with selector %s: %v", serviceLabelSelector, err))
 	}
 
 	// write the services to their respective yaml files
 	serviceDetailsFileNameFormat := "%s-service.yaml"
 	if err := service.WriteServiceYamlsToFile(serviceList, serviceDetailsFileNameFormat, serviceDirectory); err != nil {
-		return err
+		logger.Error(err.Error())
+	}
+
+	if fileCount, err := utils.GetFileCountInDirectory(serviceDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("Service details: %s: Total Files: %d", serviceDirectory, fileCount))
 	}
 
 	return nil

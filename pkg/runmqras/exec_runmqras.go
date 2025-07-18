@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/container"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
@@ -20,7 +21,7 @@ import (
 //   - client: the Kubernetes client used to interact with the cluster.
 //   - selector: the label selector used to filter the routes.
 //   - namespace: the namespace in which to search for the routes.
-func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, selector, namespace string) ([]container.CopyConfig, error) {
+func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, selector, namespace string, logger *slog.Logger) ([]container.CopyConfig, error) {
 
 	podList, err := pods.GetPodsBySelector(client, selector, namespace)
 	if err != nil {
@@ -32,7 +33,9 @@ func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, selec
 	for _, pod := range podList {
 		copyConfig, err := execRunmqras(cfg, pod)
 		if err != nil {
-			return runmqrasPodExecutorList, fmt.Errorf("error while executing runmqras inside pod %s: %v", pod.Name, err)
+			// log the error, and continue trying to run the runmqras for other pods in podList
+			logger.Error(fmt.Sprintf("error while executing runmqras inside pod %s: %v", pod.Name, err))
+			continue
 		}
 		runmqrasPodExecutorList = append(runmqrasPodExecutorList, copyConfig)
 	}

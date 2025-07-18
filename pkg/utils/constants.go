@@ -73,3 +73,5 @@ const CP4iOperatorPrefix = "ibm-integration-platform-navigator"
 const WebConsoleLogPath = "var/mqm/web/installations/Installation1/servers/mqweb/logs/console.log"
 
 const WebConsoleMessageLogPath = "var/mqm/web/installations/Installation1/servers/mqweb/logs/messages.log"
+
+const MustGatherLogFileName = "must-gather-logs.log"
