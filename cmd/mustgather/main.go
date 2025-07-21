@@ -103,6 +103,13 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 		}
 
 		flags.OutputDir = filepath.Join(currentWorkingDir, fmt.Sprintf("Must_Gather_%v", timestamp))
+		// If OutputDir doesnot exist create the directory
+		directoryExist := utils.CheckIfDirectoryExist(flags.OutputDir)
+		if !directoryExist {
+			if err := utils.CreateDirectory(flags.OutputDir, 0775); err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 

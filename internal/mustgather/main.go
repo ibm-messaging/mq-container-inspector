@@ -140,7 +140,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 
 	// collect MQ operator must-gathers
 	logger.Info("---- Collecting mq-operator details ----")
-	fmt.Print("collecting mq-operator details...")
+	fmt.Print("Collecting mq-operator details...")
 	mustGatherStartTime = time.Now()
 	err = gatherMQOperatorToFiles(coreClient, dynamicClient, flags, logger)
 	if err != nil {
