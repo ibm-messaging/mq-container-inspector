@@ -35,7 +35,7 @@ func Execute() {
 		fmt.Println("Starting Must-Gather tool")
 		err := cmd.MustGather(args[1:])
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("MustGather FAILED: %s\n", err)
 			os.Exit(1)
 		}
 		fmt.Println("MustGathers collected")

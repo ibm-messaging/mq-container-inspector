@@ -31,41 +31,40 @@ import (
 
 func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
 
-	// create cr directory to store cr files
-	crDirectory := filepath.Join(flags.OutputDir, "crs")
-	directoryExist := utils.CheckIfDirectoryExist(crDirectory)
+	// create queue-managers directory to store queue-managers cr files
+	qmDirectory := filepath.Join(flags.OutputDir, "queue-managers")
+	directoryExist := utils.CheckIfDirectoryExist(qmDirectory)
 	if !directoryExist {
-		if err := utils.CreateDirectory(crDirectory, 0775); err != nil {
+		if err := utils.CreateDirectory(qmDirectory, 0775); err != nil {
 			return err
 		}
 	}
 
 	// get QueueManager details by QueueManager name
 	queueManagerDetailsMap, err := cr.GetQueueManagerCrDetailsByName(dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace)
-	if err != nil {
-		fmt.Printf("error retrieving queue manager %s in the namespace %s: %v\n", flags.QueueManagerName, flags.QueueManagerNamespace, err)
-	}
-
-	// check if the QueueManager with the provided name exists in the provided namespace
-	if queueManagerDetailsMap == nil {
-		// fetch the names of all the queue managers in the queue manager namespace
-		fmt.Printf("Listing queue managers in the namespace: %s\n", flags.QueueManagerNamespace)
+	if errors.IsNotFound(err) || queueManagerDetailsMap == nil {
+		fmt.Printf("\nERROR: queue manager '%s' not found in the namespace '%s'\n", flags.QueueManagerName, flags.QueueManagerNamespace)
+		// find all the queue managers in the queue manager namespace
 		queueManagerList, err := cr.ListQueueManagersInNamespace(dynamicClient, flags.QueueManagerNamespace)
 		if errors.IsNotFound(err) || len(queueManagerList) == 0 {
-			return fmt.Errorf("no queue managers found in the namespace: %s, Please ensure the namespace provided is the namespace where the queue manager is deployed", flags.QueueManagerNamespace)
+			fmt.Printf("No queue managers found in the namespace '%s'. Please validate your namespace is correct\n", flags.QueueManagerNamespace)
+			return fmt.Errorf("queue manager '%s' not found", flags.QueueManagerName)
 		} else if err != nil {
 			return fmt.Errorf("error retrieving queue managers in the namespace %s: %v", flags.QueueManagerNamespace, err)
 		}
+		fmt.Printf("Available queue managers in namespace '%s':\n", flags.QueueManagerNamespace)
 		printQueueManagerDetails(queueManagerList)
-		return fmt.Errorf("please re-run the must gather tool with a valid queue manager metadata.name and namespace")
-
+		fmt.Printf("Please re-run the must gather with a valid queue manager name\n")
+		return fmt.Errorf("queue manager '%s' not found", flags.QueueManagerName)
+	} else if err != nil {
+		fmt.Printf("error retrieving queue manager %s in the namespace %s: %v\n", flags.QueueManagerName, flags.QueueManagerNamespace, err)
 	}
 
 	logger.Info(fmt.Sprintf("Found %s queue manager in %s namespace", flags.QueueManagerName, flags.QueueManagerNamespace))
 
 	//write the QueueManager details to its yaml
 	fileNameFormat := "%s.yaml"
-	if err := cr.WriteQueueManagerCrdYamlToFiles(queueManagerDetailsMap, fileNameFormat, crDirectory, flags.QueueManagerName); err != nil {
+	if err := cr.WriteQueueManagerCrdYamlToFiles(queueManagerDetailsMap, fileNameFormat, qmDirectory, flags.QueueManagerName); err != nil {
 		return err
 	}
 
@@ -80,17 +79,26 @@ func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 
 		logger.Info(fmt.Sprintf("Found IntegrationKeycloakClient resource with %s queue manager as owner, in %s namespace", flags.QueueManagerName, flags.QueueManagerNamespace))
 
+		// create cp4i directory to store cp4i files
+		cp4iDirectory := filepath.Join(flags.OutputDir, "cp4i")
+		directoryExists := utils.CheckIfDirectoryExist(cp4iDirectory)
+		if !directoryExists {
+			if err := utils.CreateDirectory(cp4iDirectory, 0775); err != nil {
+				return err
+			}
+		}
+
 		// write the IntegrationKecloakClient details to its yaml
 		integrationkeycloakClientFileNameFormat := "%s-integration-keycloak-client.yaml"
-		if err := cr.WriteIntegrationKeycloakClientCrdYamlToFiles(integrationKeycloakClientDetails, integrationkeycloakClientFileNameFormat, crDirectory); err != nil {
+		if err := cr.WriteIntegrationKeycloakClientCrdYamlToFiles(integrationKeycloakClientDetails, integrationkeycloakClientFileNameFormat, cp4iDirectory); err != nil {
 			logger.Error(err.Error())
 		}
 	}
 
-	if fileCount, err := utils.GetFileCountInDirectory(crDirectory); err != nil {
+	if fileCount, err := utils.GetFileCountInDirectory(qmDirectory); err != nil {
 		logger.Error(err.Error())
 	} else {
-		logger.Info(fmt.Sprintf("CR details: %s: Total Files: %d", crDirectory, fileCount))
+		logger.Info(fmt.Sprintf("CR details: %s: Total Files: %d", qmDirectory, fileCount))
 	}
 
 	return nil

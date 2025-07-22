@@ -45,7 +45,7 @@ func gatherCp4IOperatorCSVToFiles(dynamicClient dynamic.Interface, flags utils.M
 		logger.Info(fmt.Sprintf("could not find %s operator in %s namespace: %v\n", utils.CommonServicesOperatorPrefix, flags.QueueManagerNamespace, err))
 	}
 
-	if commonServiceOperatorCSVList != nil && len(commonServiceOperatorCSVList) > 0 {
+	if commonServiceOperatorCSVList != nil {
 		if err := csv.WriteCSVYamlsToFile(commonServiceOperatorCSVList, fileNameFormat, cp4iDirectory); err != nil {
 			logger.Error(err.Error())
 		}
@@ -58,7 +58,7 @@ func gatherCp4IOperatorCSVToFiles(dynamicClient dynamic.Interface, flags utils.M
 		logger.Info(fmt.Sprintf("could not find %s operator in %s namespace: %v\n", utils.CP4iOperatorPrefix, flags.QueueManagerNamespace, err))
 	}
 
-	if pnOperatorCSVList != nil && len(pnOperatorCSVList) > 0 {
+	if pnOperatorCSVList != nil {
 		if err := csv.WriteCSVYamlsToFile(pnOperatorCSVList, fileNameFormat, cp4iDirectory); err != nil {
 			logger.Error(err.Error())
 		}

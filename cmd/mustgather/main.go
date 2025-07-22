@@ -46,7 +46,7 @@ func MustGather(args []string) error {
 	}
 
 	if err := mustgather.MustGather(cfg, flags); err != nil {
-		return fmt.Errorf("error running must gather: %v", err)
+		return err
 	}
 
 	return nil
