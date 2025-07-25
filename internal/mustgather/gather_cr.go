@@ -98,7 +98,7 @@ func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 	if fileCount, err := utils.GetFileCountInDirectory(qmDirectory); err != nil {
 		logger.Error(err.Error())
 	} else {
-		logger.Info(fmt.Sprintf("CR details: %s: Total Files: %d", qmDirectory, fileCount))
+		logger.Info(fmt.Sprintf("Queue-Manager details: %s: Total Files: %d", qmDirectory, fileCount))
 	}
 
 	return nil

@@ -83,6 +83,17 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
 	logger.Info("---- queue manager details collected ----")
 
+	// collect queue manager crd must-gathers
+	logger.Info("---- Collecting queue manager CRD details ----")
+	fmt.Print("Collecting queue manager CRD details ...")
+	mustGatherStartTime = time.Now()
+	err = gatherCRDsToFiles(dynamicClient, flags, logger)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+	logger.Info("---- queue manager crd details collected ----")
+
 	// collect pods must-gathers
 	logger.Info("---- Collecting pod details ----")
 	fmt.Print("Collecting pod details...")
