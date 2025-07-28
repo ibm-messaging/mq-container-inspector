@@ -34,6 +34,7 @@ type MustGatherFlags struct {
 	KubeconfigPath        string // path to the kubeconfig file
 	OutputDir             string // directory where the must-gathers will be stored
 	TarZip                bool   // whether to tar+zip the must-gather output
+	NoExec                bool   //whether to collect the pod-exec must-gathers like runmqras etc.
 }
 
 var GetCurrentTimestamp = func(timeFormat string) string {

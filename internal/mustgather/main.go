@@ -171,27 +171,30 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
 	logger.Info("---- CP4I details collected ----")
 
-	// collect web-console logs
-	logger.Info("---- Collecting web-console details ----")
-	fmt.Print("Collecting web-console details...")
-	mustGatherStartTime = time.Now()
-	err = gatherMQWebConsoleLogsToFiles(cfg, coreClient, flags, logger)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
-	logger.Info("---- Web-console details collected ----")
+	// if no-exec is disabled then collect the web-console and runmqras logs
+	if !flags.NoExec {
+		// collect web-console logs
+		logger.Info("---- Collecting web-console details ----")
+		fmt.Print("Collecting web-console details...")
+		mustGatherStartTime = time.Now()
+		err = gatherMQWebConsoleLogsToFiles(cfg, coreClient, flags, logger)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		logger.Info("---- Web-console details collected ----")
 
-	// collect runmqras logs
-	logger.Info("---- Collecting runmqras details ----")
-	fmt.Print("Collecting runmqras details(This may take time) ...")
-	mustGatherStartTime = time.Now()
-	err = gatherRunmqrasLogToFiles(cfg, coreClient, flags, logger)
-	if err != nil {
-		return err
+		// collect runmqras logs
+		logger.Info("---- Collecting runmqras details ----")
+		fmt.Print("Collecting runmqras details(This may take time) ...")
+		mustGatherStartTime = time.Now()
+		err = gatherRunmqrasLogToFiles(cfg, coreClient, flags, logger)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		logger.Info("---- Runmqras details collected ----")
 	}
-	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
-	logger.Info("---- Runmqras details collected ----")
 
 	// delete the empty directories
 	if err := utils.DeleteEmptyDirectories(flags.OutputDir, logger); err != nil {
