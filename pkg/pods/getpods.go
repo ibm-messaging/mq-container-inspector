@@ -178,3 +178,12 @@ func GetPodEventsBySelector(client kubernetes.Interface, selector, namespace str
 	return podEventsMap, nil
 
 }
+
+// GetPodByName retrieves the pod details by pod name in a given namespace.
+//   - client: the Kubernetes client used to interact with the cluster.
+//   - podName: the name of the pod.
+//   - namespace: the namespace in which to search for the pods.
+func GetPodByName(client kubernetes.Interface, podName, namespace string) (*corev1.Pod, error) {
+	return client.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
+
+}

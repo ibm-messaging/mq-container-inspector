@@ -59,7 +59,8 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 
 	flagSet := flag.NewFlagSet(utils.MustGather, flag.ContinueOnError)
 
-	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name (required)")
+	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name")
+	flagSet.StringVar(&flags.PodName, "pod-name", "", "pod name of the mq instance")
 	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "QueueManager custom resource metadata.namespace (required)")
 	flagSet.StringVar(&flags.OperatorNamespace, "operator-namespace", "", "MQ Operator namespace")
 	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "kubeconfig file path, defaults to '.kube/config'")
@@ -77,9 +78,9 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 	}
 
 	// validate if required flags have been passed
-	if !validateRequiredFlags(flags) {
+	if ok, message := validateRequiredFlags(flags); !ok {
 		flagSet.Usage()
-		return flags, fmt.Errorf("error required flags are missing")
+		return flags, fmt.Errorf("%s", message)
 	}
 
 	return flags, nil
@@ -130,11 +131,19 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 
 }
 
-func validateRequiredFlags(flags utils.MustGatherFlags) bool {
+func validateRequiredFlags(flags utils.MustGatherFlags) (bool, string) {
 
-	if flags.QueueManagerName == "" || flags.QueueManagerNamespace == "" {
-		return false
+	if flags.QueueManagerNamespace == "" {
+		return false, "error: --qm-namespace is required"
 	}
 
-	return true
+	if flags.QueueManagerName == "" && flags.PodName == "" {
+		return false, "error: at least one of --qm-name or --pod-name must be provided"
+	}
+
+	if flags.QueueManagerName != "" && flags.PodName != "" {
+		return false, "error: only one of --qm-name or --pod-name should be provided"
+	}
+
+	return true, ""
 }

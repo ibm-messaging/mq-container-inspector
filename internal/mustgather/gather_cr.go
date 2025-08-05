@@ -18,14 +18,11 @@ package mustgather
 import (
 	"fmt"
 	"log/slog"
-	"os"
 	"path/filepath"
-	"text/tabwriter"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/cr"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 )
 
@@ -43,19 +40,8 @@ func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 	// get QueueManager details by QueueManager name
 	queueManagerDetailsMap, err := cr.GetQueueManagerCrDetailsByName(dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace)
 	if errors.IsNotFound(err) || queueManagerDetailsMap == nil {
-		fmt.Printf("\nERROR: queue manager '%s' not found in the namespace '%s'\n", flags.QueueManagerName, flags.QueueManagerNamespace)
-		// find all the queue managers in the queue manager namespace
-		queueManagerList, err := cr.ListQueueManagersInNamespace(dynamicClient, flags.QueueManagerNamespace)
-		if errors.IsNotFound(err) || len(queueManagerList) == 0 {
-			fmt.Printf("No queue managers found in the namespace '%s'. Please validate your namespace is correct\n", flags.QueueManagerNamespace)
-			return fmt.Errorf("queue manager '%s' not found", flags.QueueManagerName)
-		} else if err != nil {
-			return fmt.Errorf("error retrieving queue managers in the namespace %s: %v", flags.QueueManagerNamespace, err)
-		}
-		fmt.Printf("Available queue managers in namespace '%s':\n", flags.QueueManagerNamespace)
-		printQueueManagerDetails(queueManagerList)
-		fmt.Printf("Please re-run the must gather with a valid queue manager name\n")
-		return fmt.Errorf("queue manager '%s' not found", flags.QueueManagerName)
+		logger.Info(fmt.Sprintf("queue manager custom resource '%s' not found in the namespace '%s'", flags.QueueManagerName, flags.QueueManagerNamespace))
+		return nil
 	} else if err != nil {
 		fmt.Printf("error retrieving queue manager %s in the namespace %s: %v\n", flags.QueueManagerName, flags.QueueManagerNamespace, err)
 	}
@@ -102,25 +88,5 @@ func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 	}
 
 	return nil
-
-}
-
-func printQueueManagerDetails(queueManagerList []unstructured.Unstructured) {
-
-	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-
-	// print header
-	fmt.Fprintln(writer, "NAME\tPHASE")
-
-	for _, queueManager := range queueManagerList {
-		name := queueManager.GetName()
-		phase, found, err := unstructured.NestedString(queueManager.Object, "status", "phase")
-		if err != nil || !found {
-			phase = "<unknown>"
-		}
-		fmt.Fprintf(writer, "%s\t%s\n", name, phase)
-	}
-
-	writer.Flush()
 
 }

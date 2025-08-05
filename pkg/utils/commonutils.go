@@ -29,6 +29,7 @@ import (
 
 type MustGatherFlags struct {
 	QueueManagerName      string // QueueManager resource name
+	PodName               string // pod name
 	QueueManagerNamespace string // QueueManager  resource namespace
 	OperatorNamespace     string // namespace where the MQ Operator is running
 	KubeconfigPath        string // path to the kubeconfig file
@@ -37,7 +38,7 @@ type MustGatherFlags struct {
 	NoExec                bool   //whether to collect the pod-exec must-gathers like runmqras etc.
 }
 
-var GetCurrentTimestamp = func(timeFormat string) string {
+func GetCurrentTimestamp(timeFormat string) string {
 	return time.Now().Format(timeFormat)
 }
 
@@ -46,7 +47,7 @@ type PodLogs struct {
 	CurrentPodLogsRequest  *rest.Request
 }
 
-var FetchQMGRResourceNameFromSelector = func(selector string) (string, error) {
+func FetchQMGRResourceNameFromSelector(selector string) (string, error) {
 	if index := strings.Index(selector, "="); index != -1 {
 		return selector[index+1:], nil
 	}
@@ -54,7 +55,7 @@ var FetchQMGRResourceNameFromSelector = func(selector string) (string, error) {
 	return "", fmt.Errorf("error invalid selector format: %s", selector)
 }
 
-var FormatFilePath = func(outputDir, fileNameFormat string, args ...interface{}) string {
+func FormatFilePath(outputDir, fileNameFormat string, args ...interface{}) string {
 	filename := fmt.Sprintf(fileNameFormat, args...)
 	return filepath.Join(outputDir, filename)
 }
@@ -67,23 +68,23 @@ type ExecConfig struct {
 	Cmd              []string
 }
 
-var CheckIfDirectoryExist = func(dir string) bool {
+func CheckIfDirectoryExist(dir string) bool {
 	_, err := os.Stat(dir)
 	return !os.IsNotExist(err)
 }
 
-var CreateDirectory = func(dir string, perm fs.FileMode) error {
+func CreateDirectory(dir string, perm fs.FileMode) error {
 	if err := os.MkdirAll(dir, perm); err != nil {
 		return fmt.Errorf("error creating output-directory(%s): %v", dir, err)
 	}
 	return nil
 }
 
-var GetLogFilePath = func(outputDirectory, logFileName string) string {
+func GetLogFilePath(outputDirectory, logFileName string) string {
 	return filepath.Join(outputDirectory, logFileName)
 }
 
-var InitializeLogFile = func(outputDirectory, logFileName string) (*os.File, error) {
+func InitializeLogFile(outputDirectory, logFileName string) (*os.File, error) {
 	logFilePath := GetLogFilePath(outputDirectory, logFileName)
 
 	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
@@ -94,7 +95,7 @@ var InitializeLogFile = func(outputDirectory, logFileName string) (*os.File, err
 
 }
 
-var GetFileCountInDirectory = func(directoryName string) (int, error) {
+func GetFileCountInDirectory(directoryName string) (int, error) {
 
 	entries, err := os.ReadDir(directoryName)
 	if err != nil {
@@ -112,7 +113,7 @@ var GetFileCountInDirectory = func(directoryName string) (int, error) {
 
 }
 
-var DeleteEmptyDirectories = func(directoryName string, logger *slog.Logger) error {
+func DeleteEmptyDirectories(directoryName string, logger *slog.Logger) error {
 
 	entries, err := os.ReadDir(directoryName)
 	if err != nil {

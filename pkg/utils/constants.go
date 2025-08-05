@@ -96,3 +96,9 @@ const MustGatherLogFileName = "must-gather-logs.log"
 const CRDGroup = "apiextensions.k8s.io"
 
 const CRDResource = "customresourcedefinitions"
+
+const NativeHAEnvName = "MQ_NATIVE_HA"
+
+const MultiInstanceEnvName = "MQ_MULTI_INSTANCE"
+
+const QueueManagerEnvName = "MQ_QMGR_NAME"

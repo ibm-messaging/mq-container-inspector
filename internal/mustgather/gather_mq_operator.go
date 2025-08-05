@@ -64,7 +64,9 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	// identify the operator namespace
 	operatorNamespace, err := identifyOperatorNamespace(coreClient, operatorLabelSelector, flags)
 	if err != nil {
-		return err
+		// log the error and continue the tool execution
+		logger.Info(err.Error())
+		return nil
 	}
 	logger.Info(fmt.Sprintf("mq-operator deployment found in %s namespace", operatorNamespace))
 
