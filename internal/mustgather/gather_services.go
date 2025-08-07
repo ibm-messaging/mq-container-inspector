@@ -22,6 +22,7 @@ import (
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/service"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -36,12 +37,26 @@ func gatherServicesToFiles(coreClient kubernetes.Interface, flags utils.MustGath
 		}
 	}
 
-	serviceLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
+	var serviceList []corev1.Service
+	var err error
 
-	// get the service details by selector
-	serviceList, err := service.GetServiceDetailsBySelector(coreClient, serviceLabelSelector, flags.QueueManagerNamespace)
-	if err != nil {
-		logger.Error(fmt.Sprintf("error while fetching services with selector %s: %v", serviceLabelSelector, err))
+	if flags.QueueManagerName != "" {
+		serviceLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
+
+		// get the service details by selector
+		serviceList, err = service.GetServiceDetailsBySelector(coreClient, serviceLabelSelector, flags.QueueManagerNamespace)
+		if err != nil {
+			logger.Error(fmt.Sprintf("error while fetching services with selector %s: %v", serviceLabelSelector, err))
+		}
+	} else if flags.PodName != "" {
+
+		// get the service details by pod-name
+		serviceList, err = service.GetServiceDetailsByPodName(coreClient, flags.PodName, flags.QueueManagerNamespace)
+		if err != nil {
+			logger.Error(fmt.Sprintf("error while fetching services with pod name %s: %v", flags.PodName, err))
+			return err
+		}
+
 	}
 
 	// write the services to their respective yaml files

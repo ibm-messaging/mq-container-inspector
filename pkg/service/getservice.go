@@ -18,6 +18,7 @@ package service
 import (
 	"context"
 
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,5 +43,54 @@ func GetServiceDetailsBySelector(client kubernetes.Interface, selector, namespac
 	}
 
 	return serviceList.Items, err
+
+}
+
+// GetServiceDetailsByPodName retrieves all services in a given namespace that match the provided pod name
+// Parameters:
+//   - client: the Kubernetes client used to interact with the cluster.
+//   - podName: the pod name used to filter the services.
+//   - namespace: the namespace in which to search for the services.
+func GetServiceDetailsByPodName(client kubernetes.Interface, podName, namsespace string) ([]corev1.Service, error) {
+
+	podList, err := pods.GetMQReplicaPodsViaService(client, podName, namsespace)
+	if err != nil {
+		return nil, err
+	}
+
+	var podLabels []map[string]string
+
+	pod := podList[0]
+	podLabels = append(podLabels, pod.ObjectMeta.Labels)
+
+	// if the pod instance is of type NativeHA then we will be having additional services for communication between pods
+	if utils.GetPodInstance(&pod) == utils.NativeHA {
+		for index, pod := range podList {
+			if index < 1 {
+				continue
+			}
+			podLabels = append(podLabels, pod.ObjectMeta.Labels)
+		}
+	}
+
+	// fetch all the services in the namespace
+	serviceList, err := client.CoreV1().Services(namsespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var matchingServices []corev1.Service
+	for _, podLabel := range podLabels {
+		for _, service := range serviceList.Items {
+
+			// check if the service selector is a subset of the pod label
+			if utils.IsSelectorSubsetOfLabels(service.Spec.Selector, podLabel) {
+				matchingServices = append(matchingServices, service)
+			}
+
+		}
+	}
+
+	return matchingServices, nil
 
 }

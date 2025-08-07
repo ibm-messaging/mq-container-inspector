@@ -102,3 +102,9 @@ const NativeHAEnvName = "MQ_NATIVE_HA"
 const MultiInstanceEnvName = "MQ_MULTI_INSTANCE"
 
 const QueueManagerEnvName = "MQ_QMGR_NAME"
+
+const NativeHA = "NativeHA"
+
+const MultiInstance = "MultiInstance"
+
+const SingleInstance = "SingleInstance"

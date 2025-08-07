@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -139,5 +140,31 @@ func DeleteEmptyDirectories(directoryName string, logger *slog.Logger) error {
 	}
 
 	return nil
+
+}
+
+func GetPodInstance(pod *corev1.Pod) string {
+
+	for _, container := range pod.Spec.Containers {
+		for _, env := range container.Env {
+			if env.Name == NativeHAEnvName && env.Value == "true" {
+				return NativeHA
+			} else if env.Name == MultiInstanceEnvName && env.Value == "true" {
+				return MultiInstance
+			}
+		}
+	}
+	return SingleInstance
+}
+
+func IsSelectorSubsetOfLabels(selector, label map[string]string) bool {
+
+	for key, value := range selector {
+		if label[key] != value {
+			return false
+		}
+	}
+
+	return true
 
 }
