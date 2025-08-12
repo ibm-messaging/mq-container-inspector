@@ -1,0 +1,14 @@
+{
+  "settingsInheritedFrom": "whitesource-config/whitesource-config@master",
+  "scanSettingsSAST": {
+    "enableScan": true
+  },
+  "scanSettings": {
+    "baseBranches": [
+      "main"
+    ]
+  },
+  "issueSettings": {
+    "issueRepoName": "whitesource-scan-issues"
+  }
+}
