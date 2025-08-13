@@ -132,6 +132,9 @@ func GetMQReplicaPodsViaService(client kubernetes.Interface, podName, namespace 
 	}
 
 	if expectedPodCount == 1 {
+		// the pod get API returns the pods with the apiVersion and kind field as empty, so setting them explicitly
+		pod.TypeMeta.APIVersion = utils.ApiVersionV1
+		pod.TypeMeta.Kind = utils.KindPod
 		return []corev1.Pod{*pod}, nil
 	}
 

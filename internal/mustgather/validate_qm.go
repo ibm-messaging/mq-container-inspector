@@ -70,27 +70,27 @@ func validatePodName(coreClient kubernetes.Interface, flags *utils.MustGatherFla
 
 }
 
-func validateQueueManagerName(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, flags *utils.MustGatherFlags) error {
+func validateQueueManagerName(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, flags *utils.MustGatherFlags) (*corev1.Pod, error) {
 
 	if flags.QueueManagerName == "" {
-		return nil
+		return nil, nil
 	}
 
 	// check if we have pods with the instance as --qm-name
 	labelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 	podList, err := pods.GetPodsBySelector(coreClient, labelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		return fmt.Errorf("error while fetching pods with selector %s in namespace %s", labelSelector, flags.QueueManagerNamespace)
+		return nil, fmt.Errorf("error while fetching pods with selector %s in namespace %s", labelSelector, flags.QueueManagerNamespace)
 	} else if podList == nil {
 		// display all the QMGR pods in the namespace
 		fmt.Printf("Queue manager '%s' not found in the namespace '%s'\n", flags.QueueManagerName, flags.QueueManagerNamespace)
 		if err := listAllQueueManagerCRs(dynamicClient, flags); err != nil {
-			return err
+			return nil, err
 		}
-		return fmt.Errorf("no queue manager found with name %s in namespace %s", flags.QueueManagerName, flags.QueueManagerNamespace)
+		return nil, fmt.Errorf("no queue manager found with name %s in namespace %s", flags.QueueManagerName, flags.QueueManagerNamespace)
 	}
 
-	return nil
+	return &podList[0], nil
 
 }
 

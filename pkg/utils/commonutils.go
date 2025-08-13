@@ -168,3 +168,15 @@ func IsSelectorSubsetOfLabels(selector, label map[string]string) bool {
 	return true
 
 }
+
+func GetPodOwner(pod *corev1.Pod) string {
+
+	// a pod can have multiple owners but only a single controlling owner which is what we return
+	for _, owner := range pod.ObjectMeta.OwnerReferences {
+		if owner.Kind != "" && *owner.Controller {
+			return owner.Kind
+		}
+	}
+
+	return ""
+}

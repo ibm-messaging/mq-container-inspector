@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"testing"
 
+	controllerrevisions "github.ibm.com/mq-cloudpak/mq-inspector/pkg/controller_revisions"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/test"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -72,7 +73,7 @@ func TestGetStatefulSetRevisionsBySelector(t *testing.T) {
 
 	fakeClient := fake.NewSimpleClientset(runtimeObjects...)
 
-	result, err := GetStatefulSetRevisionsBySelector(fakeClient, selector, namespace)
+	result, err := controllerrevisions.GetControllerRevisionsBySelector(fakeClient, selector, namespace)
 	if err != nil {
 		t.Errorf("error fetching StatefulSet revisions by selector: %v", err)
 	}

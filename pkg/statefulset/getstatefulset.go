@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,28 +48,7 @@ func GetStatefulSetDetailsBySelector(client kubernetes.Interface, selector, name
 
 }
 
-// GetStatefulSetRevisionsBySelector retrieves all StatefulSet revisions in a given namespace that match the provided label selector.
-// Parameters:
-//   - client: the Kubernetes client used to interact with the cluster.
-//   - selector: the label selector used to filter the StatefulSets.
-//   - namespace: the namespace in which to search for the StatefulSets.
-func GetStatefulSetRevisionsBySelector(client kubernetes.Interface, selector, namespace string) ([]appsv1.ControllerRevision, error) {
-
-	statefulSetRevisionList, err := client.AppsV1().ControllerRevisions(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: selector,
-	})
-
-	// the ControllerRevision list API returns the controller-revisions with the apiVersion and kind field as empty, so setting them explicitly
-	for index := range statefulSetRevisionList.Items {
-		statefulSetRevisionList.Items[index].TypeMeta.APIVersion = utils.ApiVersionAppsV1
-		statefulSetRevisionList.Items[index].TypeMeta.Kind = utils.KindControllerRevision
-	}
-
-	return statefulSetRevisionList.Items, err
-
-}
-
-// GetStatefulSetRevisionsBySelector retrieves all StatefulSet events in a given namespace that match the provided label selector.
+// GetStatefulSetEventsBySelector retrieves all StatefulSet events in a given namespace that match the provided label selector.
 // Parameters:
 //   - client: the Kubernetes client used to interact with the cluster.
 //   - selector: the label selector used to filter the StatefulSets.
@@ -96,6 +76,65 @@ func GetStatefulSetEventsBySelector(client kubernetes.Interface, selector, names
 		statefulSetEventsMap[statefulSet.Name] = statefulSetEvents.Items
 
 	}
+
+	return statefulSetEventsMap, nil
+
+}
+
+// GetStatefulSetDetailsByPodName retrieves all StatefulSet details in a given namespace that match the provided pod name.
+// Parameters:
+//   - client: the Kubernetes client used to interact with the cluster.
+//   - podName: the pod name used to filter the StatefulSets.
+//   - namespace: the namespace in which to search for the StatefulSets.
+func GetStatefulSetDetailsByPodName(client kubernetes.Interface, podName, namesapce string) (*appsv1.StatefulSet, error) {
+
+	pod, err := pods.GetPodByName(client, podName, namesapce)
+	if err != nil {
+		return nil, err
+	}
+
+	ownerName := ""
+	for _, owner := range pod.ObjectMeta.OwnerReferences {
+		if *owner.Controller {
+			ownerName = owner.Name
+			break
+		}
+	}
+	if ownerName == "" {
+		return nil, fmt.Errorf("error no statefulset found as the contoller owner for the %s pod", pod.Name)
+	}
+
+	statefulSetDetails, err := client.AppsV1().StatefulSets(namesapce).Get(context.TODO(), ownerName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// the StatefulSet get API returns the statefulsets with the apiVersion and kind field as empty, so setting them explicitly
+	statefulSetDetails.TypeMeta.APIVersion = utils.ApiVersionAppsV1
+	statefulSetDetails.TypeMeta.Kind = utils.KindStatefulSet
+
+	return statefulSetDetails, nil
+
+}
+
+// GetStatefulSetEventsByName retrieves all StatefulSet events in a given namespace that match the provided statefulSet name.
+// Parameters:
+//   - client: the Kubernetes client used to interact with the cluster.
+//   - statefulSetName: the statefulSet name to fetch the events for.
+//   - namespace: the namespace in which to search for the StatefulSets.
+func GetStatefulSetEventsByName(client kubernetes.Interface, statefulSetName, namesapce string) (map[string][]corev1.Event, error) {
+
+	statefulSetEventsMap := make(map[string][]corev1.Event)
+
+	fieldSelector := fmt.Sprintf("involvedObject.name=%s", statefulSetName)
+
+	statefulSetEvents, err := client.CoreV1().Events(namesapce).List(context.TODO(), metav1.ListOptions{
+		FieldSelector: fieldSelector,
+	})
+	if err != nil {
+		return nil, err
+	}
+	statefulSetEventsMap[statefulSetName] = statefulSetEvents.Items
 
 	return statefulSetEventsMap, nil
 

@@ -45,6 +45,10 @@ const KindPVC = "PersistentVolumeClaim"
 
 const KindDeployment = "Deployment"
 
+const KindReplicaSet = "ReplicaSet"
+
+const KindDaemonSet = "DaemonSet"
+
 const KindCSV = "ClusterServiceVersion"
 
 const KindCSVList = "ClusterServiceVersionList"

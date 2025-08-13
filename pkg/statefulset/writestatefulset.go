@@ -53,45 +53,9 @@ func WriteStatefulSetYamlsToFile(statefulSetList []appsv1.StatefulSet, fileNameF
 
 }
 
-// WriteStatefulSetRevisionYamlsToFile writes the StatefulSet revisions as a list to a single file.
-// Parameters:
-//   - statefulSetRevisionList:  the list of StatefulSet revision whose details will be written.
-//   - fileNameFormat:           the format string used to name each file; must contain one "%s", which will be replaced by the StatefulSet name.
-//   - outputDir:                the directory in which the YAML files will be created.
-func WriteStatefulSetRevisionYamlsToFile(statefulSetRevisionList []appsv1.ControllerRevision, fileNameFormat, outputDir string) error {
-
-	if len(statefulSetRevisionList) > 0 {
-
-		statefulSetName := statefulSetRevisionList[0].OwnerReferences[0].Name
-
-		fileName := utils.FormatFilePath(outputDir, fileNameFormat, statefulSetName)
-
-		// creating a Kind:List, object to store all the revisions in a single file
-		revisionListMap := map[string]interface{}{
-			"apiVersion": utils.ApiVersionV1,
-			"kind":       utils.KindList,
-			"items":      statefulSetRevisionList,
-			"metadata": map[string]interface{}{
-				"resourceVersion": "",
-			},
-		}
-
-		data, err := yaml.Marshal(revisionListMap)
-		if err != nil {
-			return fmt.Errorf("error while marshalling yaml for StatefulSet revision %s: %v", statefulSetName, err)
-		}
-
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
-			return fmt.Errorf("error while writing StatefulSet revision %s data in the yaml file: %v", statefulSetName, err)
-		}
-	}
-
-	return nil
-}
-
 // WriteStatefulSetEventsToFile writes each StatefulSet events to their respective files.
 // Parameters:
-//   - statefulSetEventsMap:  the map of StatefulSet names to their events, which will be written..
+//   - statefulSetEventsMap:  the map of StatefulSet names to their events, which will be written.
 //   - fileNameFormat:        the format string used to name each file; must contain one "%s", which will be replaced by the StatefulSet name.
 //   - outputDir:             the directory in which the YAML files will be created.
 func WriteStatefulSetEventsToFile(statefulSetEventsMap map[string][]corev1.Event, fileNameFormat, outputDir string) error {

@@ -65,7 +65,8 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	}
 
 	// validate the --qm-name flag
-	if err := validateQueueManagerName(coreClient, dynamicClient, &flags); err != nil {
+	qmPod, err := validateQueueManagerName(coreClient, dynamicClient, &flags)
+	if err != nil {
 		return err
 	}
 
@@ -77,6 +78,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 			flags.QueueManagerName = labelValue
 			flags.PodName = ""
 		}
+		qmPod = pod
 	}
 
 	logger.Info("---- Starting Must-Gather tool ----")
@@ -129,16 +131,58 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
 	logger.Info("---- Route details collected ----")
 
-	// collect StatefulSet must-gathers
-	logger.Info("---- Collecting StatefulSet details ----")
-	fmt.Print("Collecting StatefulSet details...")
-	mustGatherStartTime = time.Now()
-	err = gatherStatefulSetToFiles(coreClient, flags, logger)
-	if err != nil {
-		return err
+	// identify the pod-owner
+	podOwner := utils.GetPodOwner(qmPod)
+
+	if qmPod == nil && flags.QueueManagerName != "" {
+		// If the queuemanager pod is nil default to StatefulSet
+		podOwner = utils.KindStatefulSet
 	}
-	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
-	logger.Info("---- StatefulSet details collected ----")
+
+	// based on the pod owner collect the required must-gathers
+	switch podOwner {
+	case utils.KindStatefulSet:
+		logger.Info(fmt.Sprintf("Found %s as the controller owner", podOwner))
+		// collect StatefulSet must-gathers
+		logger.Info("---- Collecting StatefulSet details ----")
+		fmt.Print("Collecting StatefulSet details...")
+		mustGatherStartTime = time.Now()
+		err = gatherStatefulSetToFiles(coreClient, flags, logger)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		logger.Info("---- StatefulSet details collected ----")
+
+	case utils.KindReplicaSet:
+		logger.Info(fmt.Sprintf("Found %s as the controller owner", podOwner))
+		// collect Deployment must-gathers
+		logger.Info("---- Collecting Deployment details ----")
+		fmt.Print("Collecting Deployment details...")
+		mustGatherStartTime = time.Now()
+		err = gatherDeploymentToFiles(coreClient, flags, qmPod, logger)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		logger.Info("---- Deployment details collected ----")
+
+	case utils.KindDaemonSet:
+		logger.Info(fmt.Sprintf("Found %s as the as the controller owner", podOwner))
+		// collect DaemonSet muust-gathers
+		logger.Info("---- Collecting DaemonSet details ----")
+		fmt.Print("Collecting DaemonSet details...")
+		mustGatherStartTime = time.Now()
+		err = gatherDaemonSetToFiles(coreClient, flags, qmPod, logger)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		logger.Info("---- DaemonSet details collected ----")
+
+	default:
+		logger.Info(fmt.Sprintf("No owner found for pod '%s'", qmPod.ObjectMeta.Name))
+	}
 
 	// collect Service must-gathers
 	logger.Info("---- Collecting service details ----")
