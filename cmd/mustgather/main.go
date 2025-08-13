@@ -24,6 +24,7 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-inspector/internal/mustgather"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"k8s.io/client-go/rest"
 )
 
 func MustGather(args []string) error {
@@ -42,7 +43,16 @@ func MustGather(args []string) error {
 	// generate the kubernetes config
 	cfg, err := kubeclient.BuildKubeConfig(flags.KubeconfigPath)
 	if err != nil {
-		return fmt.Errorf("error building kube-config: %v", err)
+		// If kubeconfigPath doesn't work attempt to use inClusterConfig
+		// If InClusterConfig succeed mq-inspector is probably being run from a pod
+		icConfig, icErr := rest.InClusterConfig()
+		if icErr == nil {
+			cfg = icConfig
+		} else {
+			// if there is an error with InClusterConfig(),
+			//  we want to return the BuildKubeConfig error.
+			return fmt.Errorf("error building kube-config: %v", err)
+		}
 	}
 
 	if err := mustgather.MustGather(cfg, flags); err != nil {
