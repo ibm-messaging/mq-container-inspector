@@ -17,7 +17,9 @@ package pvc
 
 import (
 	"context"
+	"fmt"
 
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,5 +44,69 @@ func GetPVCDetailsBySelector(client kubernetes.Interface, selector, namespace st
 	}
 
 	return pvcList.Items, err
+
+}
+
+// GetPVCDetailByName retrieves the pvc in a given namespace that match the provided pvc name.
+// Parameters:
+//   - client: the Kubernetes client used to interact with the cluster.
+//   - pvcName: the pvc name.
+//   - namespace: the namespace in which to search for the pvc.
+func GetPVCDetailByName(client kubernetes.Interface, pvcName, namespace string) (*corev1.PersistentVolumeClaim, error) {
+
+	pvc, err := client.CoreV1().PersistentVolumeClaims(namespace).Get(context.TODO(), pvcName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// the pvc get API returns the pvc's with the apiVersion and kind field as empty, so setting them explicitly
+	pvc.TypeMeta.APIVersion = utils.ApiVersionV1
+	pvc.TypeMeta.Kind = utils.KindPVC
+
+	return pvc, nil
+
+}
+
+// GetPVCDetailsByPodName retrieves all pvc's in a given namespace that match the provided pod name.
+// Parameters:
+//   - client: the Kubernetes client used to interact with the cluster.
+//   - podName: the pod name used to filter the pvc's.
+//   - namespace: the namespace in which to search for the pvc's.
+func GetPVCDetailsByPodName(client kubernetes.Interface, podName, namespace string) ([]corev1.PersistentVolumeClaim, error) {
+
+	// fetch all the pods
+	pods, err := pods.GetMQReplicaPodsViaService(client, podName, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	var podAttachedVolumeNames []string
+
+	for _, pod := range pods {
+		for _, volume := range pod.Spec.Volumes {
+			if volume.PersistentVolumeClaim != nil {
+				podAttachedVolumeNames = append(podAttachedVolumeNames, volume.PersistentVolumeClaim.ClaimName)
+			}
+		}
+	}
+
+	if len(podAttachedVolumeNames) == 0 {
+		return nil, fmt.Errorf("no attached pvc's found for %s pod", podName)
+	}
+
+	var pvcList []corev1.PersistentVolumeClaim
+
+	for _, pvcName := range podAttachedVolumeNames {
+
+		pvc, err := GetPVCDetailByName(client, pvcName, namespace)
+		if err != nil {
+			return nil, err
+		}
+
+		pvcList = append(pvcList, *pvc)
+
+	}
+
+	return pvcList, nil
 
 }

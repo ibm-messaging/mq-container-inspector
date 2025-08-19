@@ -22,6 +22,7 @@ import (
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pvc"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -36,12 +37,25 @@ func gatherPVCToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFla
 		}
 	}
 
-	pvcLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
+	var pvcList []corev1.PersistentVolumeClaim
+	var err error
 
-	// get pvc's by selector
-	pvcList, err := pvc.GetPVCDetailsBySelector(coreClient, pvcLabelSelector, flags.QueueManagerNamespace)
-	if err != nil {
-		logger.Error(fmt.Sprintf("error while fetching pvc's with selector %s: %v", pvcLabelSelector, err))
+	if flags.QueueManagerName != "" {
+		pvcLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
+
+		// get pvc's by selector
+		pvcList, err = pvc.GetPVCDetailsBySelector(coreClient, pvcLabelSelector, flags.QueueManagerNamespace)
+		if err != nil {
+			logger.Info(fmt.Sprintf("fetching pvc's with selector %s: %v", pvcLabelSelector, err))
+		}
+	} else if flags.PodName != "" {
+
+		// get the pvc's by pod name
+		pvcList, err = pvc.GetPVCDetailsByPodName(coreClient, flags.PodName, flags.QueueManagerNamespace)
+		if err != nil {
+			logger.Info(fmt.Sprintf("fetching pvc's for %s pod: %v", flags.PodName, err))
+		}
+
 	}
 
 	// write the pvc's to their respective yaml files
