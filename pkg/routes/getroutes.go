@@ -37,7 +37,7 @@ func GetRouteDetailsBySelector(routeClient routeClient.Interface, selector, name
 
 	// the route list API returns the routes with the apiVersion and kind field as empty, so setting them explicitly
 	for index := range routeList.Items {
-		routeList.Items[index].TypeMeta.APIVersion = utils.APIVersionRouteV1
+		routeList.Items[index].TypeMeta.APIVersion = utils.ApiVersionRouteV1
 		routeList.Items[index].TypeMeta.Kind = utils.KindRoute
 	}
 
@@ -58,7 +58,7 @@ func GetRouteDetailsByFieldSelector(routeClient routeClient.Interface, fieldSele
 
 	// the route list API returns the routes with the apiVersion and kind field as empty, so setting them explicitly
 	for index := range routeList.Items {
-		routeList.Items[index].TypeMeta.APIVersion = utils.APIVersionRouteV1
+		routeList.Items[index].TypeMeta.APIVersion = utils.ApiVersionRouteV1
 		routeList.Items[index].TypeMeta.Kind = utils.KindRoute
 	}
 

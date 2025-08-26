@@ -131,6 +131,17 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
 	logger.Info("---- Route details collected ----")
 
+	// collect the ingress must-gathers
+	logger.Info("---- Collecting ingress details ----")
+	fmt.Print("Collecting ingress details...")
+	mustGatherStartTime = time.Now()
+	err = gatherIngressToFiles(coreClient, flags, logger)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+	logger.Info("---- Ingress details collected ----")
+
 	// identify the pod-owner
 	podOwner := utils.GetPodOwner(qmPod)
 

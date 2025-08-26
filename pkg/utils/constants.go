@@ -25,7 +25,9 @@ const ApiVersionV1 = "v1"
 
 const ApiVersionAppsV1 = "apps/v1"
 
-const APIVersionRouteV1 = "route.openshift.io/v1"
+const ApiVersionRouteV1 = "route.openshift.io/v1"
+
+const ApiVersionNetworkingV1 = "networking.k8s.io/v1"
 
 const KindPod = "Pod"
 
@@ -38,6 +40,8 @@ const KindQueueManager = "QueueManager"
 const KindControllerRevision = "ControllerRevision"
 
 const KindRoute = "Route"
+
+const KindIngress = "Ingress"
 
 const KindService = "Service"
 
