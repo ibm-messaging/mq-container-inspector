@@ -23,6 +23,7 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/container"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -39,12 +40,24 @@ func gatherMQWebConsoleLogsToFiles(cfg *rest.Config, coreClient kubernetes.Inter
 		}
 	}
 
-	qmLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
+	var podList []corev1.Pod
+	var err error
 
-	// Get the queue manager pods
-	podList, err := pods.GetPodsBySelector(coreClient, qmLabelSelector, flags.QueueManagerNamespace)
-	if err != nil {
-		return err
+	if flags.QueueManagerName != "" {
+		qmLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
+
+		// Get the queue manager pods
+		podList, err = pods.GetPodsBySelector(coreClient, qmLabelSelector, flags.QueueManagerNamespace)
+		if err != nil {
+			return err
+		}
+	} else if flags.PodName != "" {
+		
+		// Get the queueManager pods from podName
+		podList, err = pods.GetMQReplicaPodsViaService(coreClient, flags.PodName, flags.QueueManagerNamespace)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, pod := range podList {

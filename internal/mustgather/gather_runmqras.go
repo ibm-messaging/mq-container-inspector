@@ -20,17 +20,38 @@ import (
 	"log/slog"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/container"
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/runmqras"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 func gatherRunmqrasLogToFiles(cfg *rest.Config, coreClient kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
 
-	runmqrasLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
+	var podList []corev1.Pod
+	var err error
 
-	runmqrasCopyConfigs, err := runmqras.ExecRunmqrasBySelector(cfg, coreClient, runmqrasLabelSelector, flags.QueueManagerNamespace, logger)
+	if flags.QueueManagerName != "" {
+		runmqrasLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
+
+		// get the queuemanager pods by label selector
+		podList, err = pods.GetPodsBySelector(coreClient, runmqrasLabelSelector, flags.QueueManagerNamespace)
+		if err != nil {
+			logger.Error(fmt.Sprintf("unable to execute runmqras command in container, the reason being: %v\n", err))
+		}
+	} else if flags.PodName != "" {
+
+		// get the pods by pod name
+		podList, err = pods.GetMQReplicaPodsViaService(coreClient, flags.PodName, flags.QueueManagerNamespace)
+		if err != nil {
+			logger.Error(fmt.Sprintf("unable to execute runmqras command in container, the reason being: %v\n", err))
+		}
+
+	}
+
+	runmqrasCopyConfigs, err := runmqras.ExecRunmqrasBySelector(cfg, coreClient, podList, flags.QueueManagerNamespace, logger)
 	if err != nil {
 		// continue in case of error
 		logger.Error(fmt.Sprintf("unable to execute runmqras command in container, the reason being: %v\n", err))

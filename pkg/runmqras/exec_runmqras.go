@@ -36,12 +36,7 @@ import (
 //   - client: the Kubernetes client used to interact with the cluster.
 //   - selector: the label selector used to filter the routes.
 //   - namespace: the namespace in which to search for the routes.
-func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, selector, namespace string, logger *slog.Logger) ([]container.CopyConfig, error) {
-
-	podList, err := pods.GetPodsBySelector(client, selector, namespace)
-	if err != nil {
-		return nil, err
-	}
+func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, podList []corev1.Pod, namespace string, logger *slog.Logger) ([]container.CopyConfig, error) {
 
 	var runmqrasPodExecutorList []container.CopyConfig
 

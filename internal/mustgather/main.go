@@ -124,7 +124,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	logger.Info("---- Collecting route details ----")
 	fmt.Print("Collecting route details...")
 	mustGatherStartTime = time.Now()
-	err = gatherRoutesToFiles(cfg, routeClient, flags, logger)
+	err = gatherRoutesToFiles(cfg, coreClient, routeClient, flags, logger)
 	if err != nil {
 		return err
 	}
