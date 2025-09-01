@@ -68,7 +68,7 @@ func getDaemonSetDetailsByPodName(client kubernetes.Interface, flags utils.MustG
 
 	daemonSetControllerRevisionList, err := controllerrevisions.GetControllerRevisionsBySelector(client, labelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error while fetching daemonset revisions with selector %s: %v", labelSelector, err))
+		logger.Warn(fmt.Sprintf("error while fetching daemonset revisions with selector %s: %v", labelSelector, err))
 	}
 
 	// get the daemonset events by daemonset name

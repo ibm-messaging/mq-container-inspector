@@ -77,7 +77,7 @@ func getMatchingIngressFromService(coreClient kubernetes.Interface, serviceList 
 	// fetch all ingresses in the namespace
 	ingressList, err := ingress.ListAllIngressInNamespace(coreClient, flags.QueueManagerNamespace)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error listing all ingress in %s namespace: %v", flags.QueueManagerNamespace, err))
+		logger.Warn(fmt.Sprintf("error listing all ingress in %s namespace: %v", flags.QueueManagerNamespace, err))
 		return nil, nil
 	}
 

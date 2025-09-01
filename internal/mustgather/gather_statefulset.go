@@ -101,7 +101,7 @@ func getStatefulSetDetailsBySelector(coreClient kubernetes.Interface, flags util
 	// get StatefulSet revisions by selector
 	statefulSetRevisionList, err := controllerrevisions.GetControllerRevisionsBySelector(coreClient, statefulSetLabelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error while fetching StatefulSet revisions with selector %s: %v", statefulSetLabelSelector, err))
+		logger.Warn(fmt.Sprintf("error while fetching StatefulSet revisions with selector %s: %v", statefulSetLabelSelector, err))
 	}
 
 	// get StatefulSet events by selector
@@ -128,7 +128,7 @@ func getStatefulSetDetailsByPodName(coreClient kubernetes.Interface, flags utils
 
 	statefulSetRevisionList, err := controllerrevisions.GetControllerRevisionsBySelector(coreClient, statefulSetLabelString, flags.QueueManagerNamespace)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error while fetching StatefulSet revisions with selector %s: %v", statefulSetLabelString, err))
+		logger.Warn(fmt.Sprintf("error while fetching StatefulSet revisions with selector %s: %v", statefulSetLabelString, err))
 	}
 
 	// get StatefulSet events by StatefulSet name

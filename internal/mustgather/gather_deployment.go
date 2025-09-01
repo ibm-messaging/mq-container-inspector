@@ -70,7 +70,7 @@ func getDeploymentDetailsByPodName(coreClient kubernetes.Interface, flags utils.
 
 	deploymentControllerRevisionList, err := controllerrevisions.GetControllerRevisionsBySelector(coreClient, labelSelector, flags.QueueManagerNamespace)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error while fetching deployment revisions with selector %s: %v", labelSelector, err))
+		logger.Warn(fmt.Sprintf("error while fetching deployment revisions with selector %s: %v", labelSelector, err))
 	}
 
 	// get the deployment events by deployment name
