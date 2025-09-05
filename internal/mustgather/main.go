@@ -24,6 +24,7 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/tarzip"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/validations"
 	"k8s.io/client-go/rest"
 )
 
@@ -60,18 +61,18 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	}
 
 	// check if the provided queue manager namespace exists on the cluster
-	if err := validateNamespace(coreClient, flags.QueueManagerNamespace); err != nil {
+	if err := validations.ValidateNamespace(coreClient, flags.QueueManagerNamespace); err != nil {
 		return err
 	}
 
 	// validate the --qm-name flag
-	qmPod, err := validateQueueManagerName(coreClient, dynamicClient, &flags)
+	qmPod, err := validations.ValidateQueueManagerName(coreClient, dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace)
 	if err != nil {
 		return err
 	}
 
 	// validate the --pod-name flag
-	if pod, err := validatePodName(coreClient, &flags); err != nil {
+	if pod, err := validations.ValidatePodName(coreClient, flags.PodName, flags.QueueManagerNamespace); err != nil {
 		return err
 	} else if pod != nil {
 		if labelValue, exists := pod.ObjectMeta.Labels["app.kubernetes.io/instance"]; exists {

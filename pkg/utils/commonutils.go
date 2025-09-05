@@ -39,6 +39,14 @@ type MustGatherFlags struct {
 	NoExec                bool   //whether to collect the pod-exec must-gathers like runmqras etc.
 }
 
+type PVCInspectorFlags struct {
+	QueueManagerName      string // QueueManager resource name
+	PodName               string // pod name
+	QueueManagerNamespace string // QueueManager  resource namespace
+	KubeconfigPath        string // path to the kubeconfig file
+	OutputDir             string // directory where the collected pvc-inspector data will be stored
+}
+
 func GetCurrentTimestamp(timeFormat string) string {
 	return time.Now().Format(timeFormat)
 }
@@ -179,4 +187,8 @@ func GetPodOwner(pod *corev1.Pod) string {
 	}
 
 	return ""
+}
+
+func GetPVCInspectorContainerCommand() []string {
+	return []string{"tail", "-f", "/dev/null"}
 }

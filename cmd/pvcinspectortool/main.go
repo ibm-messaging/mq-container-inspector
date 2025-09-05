@@ -13,7 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package mustgather
+
+package pvcinspectortool
 
 import (
 	"flag"
@@ -21,18 +22,18 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/internal/mustgather"
+	"github.ibm.com/mq-cloudpak/mq-inspector/internal/pvcinspectortool"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	"k8s.io/client-go/rest"
 )
 
-func MustGather(args []string) error {
+func PVCIncpectorTool(args []string) error {
 
 	// create flagset for "mustgather" os arg, and parse the args
 	flags, err := parseFlags(args)
 	if err != nil {
-		return fmt.Errorf("error parsing mustgather flags: %v", err)
+		return fmt.Errorf("error parsing pvc-inspector tool flags: %v", err)
 	}
 
 	// handle non-required flag defaults
@@ -45,8 +46,8 @@ func MustGather(args []string) error {
 	if err != nil {
 		// If kubeconfigPath doesn't work attempt to use inClusterConfig
 		// If InClusterConfig succeed mq-inspector is probably being run from a pod
-		icConfig, icErr := rest.InClusterConfig()
-		if icErr == nil {
+		icConfig, isError := rest.InClusterConfig()
+		if isError == nil {
 			cfg = icConfig
 		} else {
 			// if there is an error with InClusterConfig(),
@@ -55,28 +56,25 @@ func MustGather(args []string) error {
 		}
 	}
 
-	if err := mustgather.MustGather(cfg, flags); err != nil {
+	// run the pvc-inspector tool
+	if err := pvcinspectortool.PVCInspectorTool(cfg, flags); err != nil {
 		return err
 	}
 
 	return nil
-
 }
 
-func parseFlags(args []string) (utils.MustGatherFlags, error) {
+func parseFlags(args []string) (utils.PVCInspectorFlags, error) {
 
-	var flags utils.MustGatherFlags
+	var flags utils.PVCInspectorFlags
 
-	flagSet := flag.NewFlagSet(utils.MustGather, flag.ContinueOnError)
+	flagSet := flag.NewFlagSet(utils.PVCInspector, flag.ContinueOnError)
 
 	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name")
 	flagSet.StringVar(&flags.PodName, "pod-name", "", "pod name of the mq instance")
 	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "QueueManager custom resource metadata.namespace (required)")
-	flagSet.StringVar(&flags.OperatorNamespace, "operator-namespace", "", "MQ Operator namespace")
 	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "kubeconfig file path, defaults to '.kube/config'")
 	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "output directory where the must-gather files will be stored, defaults to current-working-directory")
-	flagSet.BoolVar(&flags.TarZip, "tar-zip", true, "whether or not to tar-zip the must-gathers, defaults to true")
-	flagSet.BoolVar(&flags.NoExec, "no-exec", false, "disable must-gathers commands that require container exec access (e.g. runmqras, webconsole logs), defaults to false")
 	flagSet.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		flagSet.PrintDefaults()
@@ -97,7 +95,7 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 
 }
 
-func setDefaultFlags(flags *utils.MustGatherFlags) error {
+func setDefaultFlags(flags *utils.PVCInspectorFlags) error {
 
 	if flags.KubeconfigPath == "" {
 		homeDir, err := os.UserHomeDir()
@@ -114,24 +112,24 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 			return fmt.Errorf("error getting user's current working directory: %v", err)
 		}
 
-		flags.OutputDir = filepath.Join(currentWorkingDir, fmt.Sprintf("Must_Gather_%v", timestamp))
+		flags.OutputDir = filepath.Join(currentWorkingDir, fmt.Sprintf("PVC_Inspector_%s", timestamp))
 		// If OutputDir doesnot exist create the directory
-		directoryExist := utils.CheckIfDirectoryExist(flags.OutputDir)
-		if !directoryExist {
+		if !utils.CheckIfDirectoryExist(flags.OutputDir) {
 			if err := utils.CreateDirectory(flags.OutputDir, 0775); err != nil {
 				return err
 			}
 		}
+
 		return nil
 	}
 
 	// create a directory inside the output directory, because we don't want to zip the entire outputDir, as it may contain other files apart from must-gather details
-	outputDir := filepath.Join(flags.OutputDir, fmt.Sprintf("Must_Gather_%v", timestamp))
+	outputDir := filepath.Join(flags.OutputDir, fmt.Sprintf("PVC_Inspector_%s", timestamp))
+
 	flags.OutputDir = outputDir
 
 	// If OutputDir doesnot exist create the directory
-	directoryExist := utils.CheckIfDirectoryExist(flags.OutputDir)
-	if !directoryExist {
+	if !utils.CheckIfDirectoryExist(flags.OutputDir) {
 		if err := utils.CreateDirectory(flags.OutputDir, 0775); err != nil {
 			return err
 		}
@@ -141,7 +139,7 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 
 }
 
-func validateRequiredFlags(flags utils.MustGatherFlags) (bool, string) {
+func validateRequiredFlags(flags utils.PVCInspectorFlags) (bool, string) {
 
 	if flags.QueueManagerNamespace == "" {
 		return false, "error: --qm-namespace is required"
@@ -156,4 +154,5 @@ func validateRequiredFlags(flags utils.MustGatherFlags) (bool, string) {
 	}
 
 	return true, ""
+
 }

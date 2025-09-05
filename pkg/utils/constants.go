@@ -19,6 +19,8 @@ const TimestampFormat = "20060102_150405"
 
 const MustGather = "mustgather"
 
+const PVCInspector = "pvctool"
+
 const Version = "version"
 
 const ApiVersionV1 = "v1"
@@ -71,6 +73,8 @@ const QmgrResource = "queuemanagers"
 
 const QmgrContainer = "qmgr"
 
+const PVCInspectorContainer = "pvc-inspector"
+
 const IntegrationKeycloakClientGroup = "keycloak.integration.ibm.com"
 
 const IntegrationKeycloakClientVersion = "v1beta1"
@@ -100,6 +104,8 @@ const WebConsoleLogPath = "var/mqm/web/installations/Installation1/servers/mqweb
 const WebConsoleMessageLogPath = "var/mqm/web/installations/Installation1/servers/mqweb/logs/messages.log"
 
 const MustGatherLogFileName = "must-gather-logs.log"
+
+const PVCInspectorLogFileName = "pvc-inspector-logs.log"
 
 const CRDGroup = "apiextensions.k8s.io"
 

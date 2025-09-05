@@ -19,7 +19,8 @@ import (
 	"fmt"
 	"os"
 
-	cmd "github.ibm.com/mq-cloudpak/mq-inspector/cmd/mustgather"
+	"github.ibm.com/mq-cloudpak/mq-inspector/cmd/mustgather"
+	"github.ibm.com/mq-cloudpak/mq-inspector/cmd/pvcinspectortool"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 )
 
@@ -33,12 +34,20 @@ func Execute() {
 	switch args[0] {
 	case utils.MustGather:
 		fmt.Println("Starting Must-Gather tool")
-		err := cmd.MustGather(args[1:])
+		err := mustgather.MustGather(args[1:])
 		if err != nil {
 			fmt.Printf("MustGather FAILED: %s\n", err)
 			os.Exit(1)
 		}
 		fmt.Println("MustGathers collected")
+	case utils.PVCInspector:
+		fmt.Println("Starting PVC-Inspector tool")
+		err := pvcinspectortool.PVCIncpectorTool(args[1:])
+		if err != nil {
+			fmt.Printf("PVC-Inspector FAILED: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("PVC data collected")
 	case utils.Version:
 		printVersion()
 	default:
