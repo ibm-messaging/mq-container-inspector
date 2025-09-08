@@ -12,19 +12,21 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags, qmPod *corev1.Pod, logger *slog.Logger) error {
+func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags, qmPod *corev1.Pod, logger *slog.Logger) ([]corev1.Pod, error) {
 
 	var podList []corev1.Pod
 
 	if utils.GetPodInstance(qmPod) != utils.SingleInstance {
 		pods, err := pods.GetMQReplicaPodsViaService(coreClient, qmPod.ObjectMeta.Name, flags.QueueManagerNamespace)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		podList = append(podList, pods...)
 	} else {
 		podList = append(podList, *qmPod)
 	}
+
+	var pvcPods []corev1.Pod
 
 	// for each pod spin-up a corresponding pvc pod
 	for _, pod := range podList {
@@ -46,14 +48,33 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 		// create the pvc pod
 		pvcPod, err := coreClient.CoreV1().Pods(pvcPod.ObjectMeta.Namespace).Create(context.TODO(), pvcPod, metav1.CreateOptions{})
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		pvcPods = append(pvcPods, *pvcPod)
 
 		logger.Info(fmt.Sprintf("Creating PVC pod %s for %s pod in %s namespace", pvcPod.ObjectMeta.Name, pod.ObjectMeta.Name, pvcPod.ObjectMeta.Namespace))
 
 	}
 
-	return nil
+	return pvcPods, nil
+
+}
+
+func DeletePVCPods(coreClient kubernetes.Interface, pvcPods []corev1.Pod, namespace string, logger *slog.Logger) {
+
+	if len(pvcPods) > 0 {
+
+		for _, pvcPod := range pvcPods {
+			err := coreClient.CoreV1().Pods(namespace).Delete(context.TODO(), pvcPod.ObjectMeta.Name, metav1.DeleteOptions{})
+			if err != nil {
+				logger.Error(fmt.Sprintf("Error deleting %s pvc-pod: %v", pvcPod.ObjectMeta.Name, err))
+			} else {
+				logger.Info(fmt.Sprintf("Successfully deleted %s pvc-pod", pvcPod.ObjectMeta.Name))
+			}
+		}
+
+	}
 
 }
 

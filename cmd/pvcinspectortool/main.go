@@ -75,6 +75,7 @@ func parseFlags(args []string) (utils.PVCInspectorFlags, error) {
 	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "QueueManager custom resource metadata.namespace (required)")
 	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "kubeconfig file path, defaults to '.kube/config'")
 	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "output directory where the must-gather files will be stored, defaults to current-working-directory")
+	flagSet.BoolVar(&flags.Cleanup, "cleanup", false, "whether or not to delete the pvc-inspector pods at the end of the tool run, defaults to false")
 	flagSet.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		flagSet.PrintDefaults()

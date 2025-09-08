@@ -63,8 +63,18 @@ func PVCInspectorTool(cfg *rest.Config, flags utils.PVCInspectorFlags) error {
 
 	logger.Info("---- Starting PVC-Inspector tool ----")
 
-	if err := pvcinspector.SetupPVCPods(coreClient, flags, qmPod, logger); err != nil {
+	pvcPods, err := pvcinspector.SetupPVCPods(coreClient, flags, qmPod, logger)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error setting up PVC pods: %v", err))
 		return err
+	}
+	logger.Info(fmt.Sprintf("%d pvc-inspector pods created in %s namespace", len(pvcPods), flags.QueueManagerNamespace))
+
+	if flags.Cleanup {
+		logger.Info("PVC_pods cleanup has been enabled")
+		logger.Info(fmt.Sprintf("Starting cleanup for the %d pvc-inspector pods", len(pvcPods)))
+		pvcinspector.DeletePVCPods(coreClient, pvcPods, flags.QueueManagerNamespace, logger)
+		logger.Info("Cleanup process completed")
 	}
 
 	logger.Info("---- PVC-Inspector tool run completed ----")
