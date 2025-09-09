@@ -83,15 +83,15 @@ func createPVCPodStructure(pod corev1.Pod, worker string, persistentVolumeClaimN
 	var pvcPodVolumeMounts []corev1.VolumeMount
 	var pvcPodVolumes []corev1.Volume
 
-	for _, pvcName := range persistentVolumeClaimNames {
+	for index, pvcName := range persistentVolumeClaimNames {
 		volumeMount := corev1.VolumeMount{
-			Name:      fmt.Sprintf("%s-%s", pvcName, pod.ObjectMeta.Name),
+			Name:      fmt.Sprintf("pvc%d-mount", index),
 			MountPath: fmt.Sprintf("/%s", pvcName),
 		}
 		pvcPodVolumeMounts = append(pvcPodVolumeMounts, volumeMount)
 
 		volume := corev1.Volume{
-			Name: fmt.Sprintf("%s-%s", pvcName, pod.ObjectMeta.Name),
+			Name: fmt.Sprintf("pvc%d-mount", index),
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 					ClaimName: pvcName,
