@@ -68,6 +68,7 @@ func PVCInspectorTool(cfg *rest.Config, flags utils.PVCInspectorFlags) error {
 		logger.Error(fmt.Sprintf("Error setting up PVC pods: %v", err))
 		return err
 	}
+
 	logger.Info(fmt.Sprintf("%d pvc-inspector pods created in %s namespace", len(pvcPods), flags.QueueManagerNamespace))
 
 	if flags.Cleanup {

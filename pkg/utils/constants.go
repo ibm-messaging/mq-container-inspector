@@ -122,3 +122,5 @@ const NativeHA = "NativeHA"
 const MultiInstance = "MultiInstance"
 
 const SingleInstance = "SingleInstance"
+
+const NodeAffinityHostNameKey = "kubernetes.io/hostname"

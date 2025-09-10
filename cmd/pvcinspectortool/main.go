@@ -70,6 +70,7 @@ func parseFlags(args []string) (utils.PVCInspectorFlags, error) {
 
 	flagSet := flag.NewFlagSet(utils.PVCInspector, flag.ContinueOnError)
 
+	// The qm-namespace is required flag and at least one of qm-name or pod-name must be specified
 	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name")
 	flagSet.StringVar(&flags.PodName, "pod-name", "", "pod name of the mq instance")
 	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "QueueManager custom resource metadata.namespace (required)")

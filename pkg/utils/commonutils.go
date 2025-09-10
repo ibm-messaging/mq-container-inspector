@@ -193,3 +193,15 @@ func GetPodOwner(pod *corev1.Pod) string {
 func GetPVCInspectorContainerCommand() []string {
 	return []string{"tail", "-f", "/dev/null"}
 }
+
+func CheckIfPodHasPersistedStorage(pod corev1.Pod) bool {
+
+	for _, volume := range pod.Spec.Volumes {
+		if volume.PersistentVolumeClaim != nil {
+			return true
+		}
+	}
+
+	return false
+
+}

@@ -14,8 +14,14 @@ import (
 
 func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags, qmPod *corev1.Pod, logger *slog.Logger) ([]corev1.Pod, error) {
 
+	// check if the qmPod has persisted storage
+	if !utils.CheckIfPodHasPersistedStorage(*qmPod) {
+		return nil, fmt.Errorf("no PVCs found. Check that the specified resource is not using ephemeral storage")
+	}
+
 	var podList []corev1.Pod
 
+	// check the instance type of the qmPod, and fill the podList
 	if utils.GetPodInstance(qmPod) != utils.SingleInstance {
 		pods, err := pods.GetMQReplicaPodsViaService(coreClient, qmPod.ObjectMeta.Name, flags.QueueManagerNamespace)
 		if err != nil {
@@ -127,7 +133,7 @@ func generatePVCPodSkeleton(pod corev1.Pod, worker string, pvcPodVolumeMounts []
 							{
 								MatchExpressions: []corev1.NodeSelectorRequirement{
 									{
-										Key:      "kubernetes.io/hostname",
+										Key:      utils.NodeAffinityHostNameKey,
 										Operator: corev1.NodeSelectorOpIn,
 										Values: []string{
 											worker,
