@@ -46,6 +46,7 @@ type PVCInspectorFlags struct {
 	KubeconfigPath        string // path to the kubeconfig file
 	OutputDir             string // directory where the collected pvc-inspector data will be stored
 	Cleanup               bool   // whether to cleanup the pvc-pods at the end of the tool run
+	DryRun                bool   // whether to create the pvc-pods
 }
 
 func GetCurrentTimestamp(timeFormat string) string {

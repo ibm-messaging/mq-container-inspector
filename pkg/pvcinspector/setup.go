@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
@@ -34,6 +35,18 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 
 	var pvcPods []corev1.Pod
 
+	// create pvc pods yaml directory inside the outputDir to collect the pvc-pods yamls
+	pvcPodYamlDir := filepath.Join(flags.OutputDir, "pvc-pod-yamls")
+	if !utils.CheckIfDirectoryExist(pvcPodYamlDir) {
+		if err := utils.CreateDirectory(pvcPodYamlDir, 0775); err != nil {
+			return nil, err
+		}
+	}
+
+	if flags.DryRun {
+		logger.Info("Dry-run enabled: pvc-inspector pods will not be created; only the pod YAMLs will be collected")
+	}
+
 	// for each pod spin-up a corresponding pvc pod
 	for _, pod := range podList {
 
@@ -50,16 +63,25 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 
 		// create the pvc-pod skeleton structure
 		pvcPod := createPVCPodStructure(pod, worker, persistentVolumeClaimNames)
+		var err error
 
-		// create the pvc pod
-		pvcPod, err := coreClient.CoreV1().Pods(pvcPod.ObjectMeta.Namespace).Create(context.TODO(), pvcPod, metav1.CreateOptions{})
-		if err != nil {
-			return nil, err
+		if !flags.DryRun {
+			// create the pvc pod
+			pvcPod, err = coreClient.CoreV1().Pods(pvcPod.ObjectMeta.Namespace).Create(context.TODO(), pvcPod, metav1.CreateOptions{})
+			if err != nil {
+				return nil, err
+			}
+
+			pvcPods = append(pvcPods, *pvcPod)
+
+			logger.Info(fmt.Sprintf("Creating PVC pod %s for %s pod in %s namespace", pvcPod.ObjectMeta.Name, pod.ObjectMeta.Name, pvcPod.ObjectMeta.Namespace))
+
 		}
 
-		pvcPods = append(pvcPods, *pvcPod)
-
-		logger.Info(fmt.Sprintf("Creating PVC pod %s for %s pod in %s namespace", pvcPod.ObjectMeta.Name, pod.ObjectMeta.Name, pvcPod.ObjectMeta.Namespace))
+		// collect the pvc-pod yaml
+		if err := collectPVCPodYaml(pvcPod, pvcPodYamlDir); err != nil {
+			logger.Error(fmt.Sprintf("Error collecting pvc-pod yaml: %v", err))
+		}
 
 	}
 
@@ -157,4 +179,10 @@ func generatePVCPodSkeleton(pod corev1.Pod, worker string, pvcPodVolumeMounts []
 			Volumes: pvcPodVolumes,
 		},
 	}
+}
+
+func collectPVCPodYaml(pod *corev1.Pod, outputDir string) error {
+	fileNameFormat := "%s.yaml"
+	return pods.WritePodYamlsToFile([]corev1.Pod{*pod}, fileNameFormat, outputDir)
+
 }
