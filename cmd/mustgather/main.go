@@ -78,8 +78,10 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 	flagSet.BoolVar(&flags.TarZip, "tar-zip", true, "whether or not to tar-zip the must-gathers, defaults to true")
 	flagSet.BoolVar(&flags.NoExec, "no-exec", false, "disable must-gathers commands that require container exec access (e.g. runmqras, webconsole logs), defaults to false")
 	flagSet.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		flagSet.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", flagSet.Name())
+		flagSet.VisitAll(func(f *flag.Flag) {
+			fmt.Fprintf(os.Stderr, "  --%s\n        %s\n", f.Name, f.Usage)
+		})
 	}
 
 	err := flagSet.Parse(args)
