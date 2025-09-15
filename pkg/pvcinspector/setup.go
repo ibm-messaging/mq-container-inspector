@@ -52,17 +52,8 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 
 		worker := pod.Spec.NodeName
 
-		var persistentVolumeClaimNames []string
-
-		// get the pod persistent volume claim names
-		for _, volume := range pod.Spec.Volumes {
-			if volume.PersistentVolumeClaim != nil {
-				persistentVolumeClaimNames = append(persistentVolumeClaimNames, volume.PersistentVolumeClaim.ClaimName)
-			}
-		}
-
 		// create the pvc-pod skeleton structure
-		pvcPod := createPVCPodStructure(pod, worker, persistentVolumeClaimNames)
+		pvcPod := createPVCPodStructure(pod, worker)
 		var err error
 
 		if !flags.DryRun {
@@ -106,27 +97,23 @@ func DeletePVCPods(coreClient kubernetes.Interface, pvcPods []corev1.Pod, namesp
 
 }
 
-func createPVCPodStructure(pod corev1.Pod, worker string, persistentVolumeClaimNames []string) *corev1.Pod {
+func createPVCPodStructure(pod corev1.Pod, worker string) *corev1.Pod {
 
 	var pvcPodVolumeMounts []corev1.VolumeMount
 	var pvcPodVolumes []corev1.Volume
+	volumeNameMap := make(map[string]struct{})
 
-	for index, pvcName := range persistentVolumeClaimNames {
-		volumeMount := corev1.VolumeMount{
-			Name:      fmt.Sprintf("pvc%d-mount", index),
-			MountPath: fmt.Sprintf("/%s", pvcName),
+	for _, volume := range pod.Spec.Volumes {
+		if volume.PersistentVolumeClaim != nil {
+			pvcPodVolumes = append(pvcPodVolumes, volume)
+			volumeNameMap[volume.Name] = struct{}{}
 		}
-		pvcPodVolumeMounts = append(pvcPodVolumeMounts, volumeMount)
+	}
 
-		volume := corev1.Volume{
-			Name: fmt.Sprintf("pvc%d-mount", index),
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: pvcName,
-				},
-			},
+	for _, volumeMount := range pod.Spec.Containers[0].VolumeMounts {
+		if _, exists := volumeNameMap[volumeMount.Name]; exists {
+			pvcPodVolumeMounts = append(pvcPodVolumeMounts, volumeMount)
 		}
-		pvcPodVolumes = append(pvcPodVolumes, volume)
 	}
 
 	return generatePVCPodSkeleton(pod, worker, pvcPodVolumeMounts, pvcPodVolumes)
@@ -169,11 +156,16 @@ func generatePVCPodSkeleton(pod corev1.Pod, worker string, pvcPodVolumeMounts []
 			},
 			Containers: []corev1.Container{
 				{
-					Name: utils.PVCInspectorContainer,
-					// TODO: replace with the mq-pod image
-					Image:        "registry.access.redhat.com/ubi9:latest",
+					Name:         utils.PVCInspectorContainer,
+					Image:        pod.Spec.Containers[0].Image,
 					Command:      utils.GetPVCInspectorContainerCommand(),
 					VolumeMounts: pvcPodVolumeMounts,
+					Env: []corev1.EnvVar{
+						{
+							Name:  "LICENSE",
+							Value: "accept",
+						},
+					},
 				},
 			},
 			Volumes: pvcPodVolumes,
