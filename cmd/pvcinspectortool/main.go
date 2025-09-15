@@ -79,8 +79,10 @@ func parseFlags(args []string) (utils.PVCInspectorFlags, error) {
 	flagSet.BoolVar(&flags.Cleanup, "cleanup", false, "whether or not to delete the pvc-inspector pods at the end of the tool run, defaults to false")
 	flagSet.BoolVar(&flags.DryRun, "dry-run", false, "run without creating the pvc-inspector pods, defaults to false")
 	flagSet.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		flagSet.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", flagSet.Name())
+		flagSet.VisitAll(func(f *flag.Flag) {
+			fmt.Fprintf(os.Stderr, "  --%s\n        %s\n", f.Name, f.Usage)
+		})
 	}
 
 	err := flagSet.Parse(args)
