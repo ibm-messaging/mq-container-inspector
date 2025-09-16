@@ -7,6 +7,7 @@ import (
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pvcinspector"
+	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/tarzip"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/validations"
 	"k8s.io/client-go/rest"
@@ -78,6 +79,16 @@ func PVCInspectorTool(cfg *rest.Config, flags utils.PVCInspectorFlags) error {
 			logger.Info(fmt.Sprintf("Starting cleanup for the %d pvc-inspector pods", len(pvcPods)))
 			pvcinspector.DeletePVCPods(coreClient, pvcPods, flags.QueueManagerNamespace, logger)
 			logger.Info("Cleanup process completed")
+		}
+	}
+
+	if !flags.NoTar {
+		logger.Info("tar-zip flag enabled, compressing the collected pvc-data")
+		fmt.Println("compressing the collected pvc-inspector data")
+
+		if err := tarzip.TarZipFolder(flags.OutputDir); err != nil {
+			logger.Error(fmt.Sprintf("Error tar zipping the collected pvc-inspector details at path %s: %v", flags.OutputDir, err))
+			return fmt.Errorf("error tar zipping the collected pvc-inspector details at path %s: %v", flags.OutputDir, err)
 		}
 	}
 

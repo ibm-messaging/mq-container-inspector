@@ -272,8 +272,8 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		logger.Error(err.Error())
 	}
 
-	// if tar is enabled, then zip the must-gather output
-	if flags.TarZip {
+	// if no-tar is disabled, then tar the must-gather output
+	if !flags.NoTar {
 		fmt.Print("Compressing the logs...")
 		mustGatherStartTime = time.Now()
 

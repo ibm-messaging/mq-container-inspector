@@ -35,7 +35,7 @@ type MustGatherFlags struct {
 	OperatorNamespace     string // namespace where the MQ Operator is running
 	KubeconfigPath        string // path to the kubeconfig file
 	OutputDir             string // directory where the must-gathers will be stored
-	TarZip                bool   // whether to tar+zip the must-gather output
+	NoTar                 bool   // whether to tar+zip the must-gather output
 	NoExec                bool   //whether to collect the pod-exec must-gathers like runmqras etc.
 }
 
@@ -47,6 +47,7 @@ type PVCInspectorFlags struct {
 	OutputDir             string // directory where the collected pvc-inspector data will be stored
 	Cleanup               bool   // whether to cleanup the pvc-pods at the end of the tool run
 	DryRun                bool   // whether to create the pvc-pods
+	NoTar                 bool   // whether to tar+zip the pvc-inspector output
 }
 
 func GetCurrentTimestamp(timeFormat string) string {
