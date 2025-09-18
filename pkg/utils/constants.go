@@ -124,3 +124,7 @@ const MultiInstance = "MultiInstance"
 const SingleInstance = "SingleInstance"
 
 const NodeAffinityHostNameKey = "kubernetes.io/hostname"
+
+const PodCreationWatcher = "PodCreation"
+
+const PodDeletionWatcher = "PodDeletion"

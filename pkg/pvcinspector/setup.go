@@ -61,6 +61,8 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 
 	if flags.DryRun {
 		logger.Info("Dry-run enabled: pvc-inspector pods will not be created; only the pod YAMLs will be collected")
+	} else {
+		fmt.Println("----- Creating PVC-inspector pods -----")
 	}
 
 	// for each pod spin-up a corresponding pvc pod
@@ -73,10 +75,16 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 		var err error
 
 		if !flags.DryRun {
+
 			// create the pvc pod
 			pvcPod, err = coreClient.CoreV1().Pods(pvcPod.ObjectMeta.Namespace).Create(context.TODO(), pvcPod, metav1.CreateOptions{})
 			if err != nil {
 				return nil, err
+			}
+
+			// watch for the pod creation and when pod has been created/failed then log the result
+			if err := pods.SetupPodWatcher(coreClient, pvcPod, flags.QueueManagerNamespace, utils.PodCreationWatcher, logger); err != nil {
+				logger.Error(fmt.Sprintf("Error while watching pvc-inspector pod creation: %v", err))
 			}
 
 			pvcPods = append(pvcPods, *pvcPod)
@@ -91,6 +99,7 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 		}
 
 	}
+	fmt.Println("----- PVC-inspector creation process completed -----")
 
 	return pvcPods, nil
 
@@ -100,6 +109,8 @@ func DeletePVCPods(coreClient kubernetes.Interface, pvcPods []corev1.Pod, namesp
 
 	if len(pvcPods) > 0 {
 
+		fmt.Println("----- Cleaning-up the PVC-inspector pods(This may take some time) -----")
+
 		for _, pvcPod := range pvcPods {
 			err := coreClient.CoreV1().Pods(namespace).Delete(context.TODO(), pvcPod.ObjectMeta.Name, metav1.DeleteOptions{})
 			if err != nil {
@@ -107,7 +118,14 @@ func DeletePVCPods(coreClient kubernetes.Interface, pvcPods []corev1.Pod, namesp
 			} else {
 				logger.Info(fmt.Sprintf("Successfully deleted %s pvc-pod", pvcPod.ObjectMeta.Name))
 			}
+
+			// setup the watcher for pvc-pod cleanup
+			if err := pods.SetupPodWatcher(coreClient, &pvcPod, namespace, utils.PodDeletionWatcher, logger); err != nil {
+				logger.Error(fmt.Sprintf("Error while watching pvc-inspector pod deletion: %v", err))
+			}
 		}
+
+		fmt.Println("----- PVC-inspector pods clean-up completed -----")
 
 	}
 
