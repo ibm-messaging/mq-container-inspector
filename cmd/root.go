@@ -57,8 +57,24 @@ func Execute() {
 }
 
 func printHelp() {
-	// TODO: add full usage info
-	fmt.Println(("Usage info"))
+
+	fmt.Println(`
+mq-inspector: A CLI tool for inspecting MQ resources
+
+Usage:
+  mq-inspector <command> [flags]
+
+Available Commands:
+  mustgather     Collect diagnostic data for a queue manager
+  pvctool        Inspect PVCs associated with a queue manager
+  version        Print the version of mq-inspector
+
+Examples:
+  mq-inspector mustgather --qm-name <queue-manager-name> --qm-namespace <namespace>
+  mq-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <namespace>
+
+Use "mq-inspector <command> --help" for more information about a command.`)
+
 }
 
 // TODO: get version from build flag so we don't need to keep updating this function

@@ -16,7 +16,7 @@ To build the MQ Inspector tools, simply run:
 
 This will produce a single binary containing all available CLI tools. No additional dependencies or setup steps are required. 
 
-## Usage
+## Mustgather Usage
 
 After building the binary, you can run the MustGather tool with the following command:
 
@@ -25,6 +25,18 @@ After building the binary, you can run the MustGather tool with the following co
 This command collects diagnostic data from the specified queue manager running in a Kubernetes or OpenShift environment.
 
 By default, the output is saved inside a `Must_Gather_<timestamp>` folder in the current working directory.
+
+## PVCtool Usage
+
+After building the binary, you can run the PVC tool with the following command:
+
+`./mq-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <namespace>`
+
+This command creates pods attached to the queue manager PVCs for inspecting the PVCs in a Kubernetes or OpenShift environment.
+
+To delete the pvctool pods, run the same command with the --cleanup flag:
+
+`./mq-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <namespace> --cleanup`
 
 ## Issues and contributions
 
