@@ -90,6 +90,9 @@ func parseFlags(args []string) (utils.PVCInspectorFlags, error) {
 	if err != nil {
 		return flags, err
 	}
+	if len(flagSet.Args()) > 0 {
+		return flags, fmt.Errorf("unexpected arguments: %v", flagSet.Args())
+	}
 
 	// validate if required flags have been passed
 	if ok, message := validateRequiredFlags(flags); !ok {
