@@ -26,14 +26,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {
+func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) ([]string, error) {
 
 	// create pods directory to store pod files
 	podsDirectory := filepath.Join(flags.OutputDir, "pods")
 	directoryExist := utils.CheckIfDirectoryExist(podsDirectory)
 	if !directoryExist {
 		if err := utils.CreateDirectory(podsDirectory, 0775); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -47,40 +47,48 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 
 		podList, podLogs, podDescribeLogs, podEvents, err = getPodDetailsBySelector(client, flags, logger)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 	} else if flags.PodName != "" {
 
 		podList, podLogs, podDescribeLogs, podEvents, err = getPodDetailsByName(client, flags, logger)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
+	}
+
+	// check and collect if we have any failed pods
+	var failedPodNames []string
+	for _, pod := range podList {
+		if pods.GetPodStatus(pod) != utils.PodRunningStatus {
+			failedPodNames = append(failedPodNames, pod.ObjectMeta.Name)
+		}
 	}
 
 	// write the pod details to a file
 	podDetailsFileNameFormat := "pod-details.txt"
 	if err := pods.WritePodDetailsToFile(podList, podDetailsFileNameFormat, podsDirectory); err != nil {
-		return err
+		return nil, err
 	}
 
 	// write the pod details to their respective yamls
 	podYamlFileNameFormat := "%s.yaml"
 	if err := pods.WritePodYamlsToFile(podList, podYamlFileNameFormat, podsDirectory); err != nil {
-		return err
+		return nil, err
 	}
 
 	// write the pods logs to their files
 	podLogsFileNameFormat := "%s-%s-pod-log.txt"
 	if err := pods.WritePodLogsToFile(podLogs, podLogsFileNameFormat, podsDirectory); err != nil {
-		return err
+		return nil, err
 	}
 
 	// write the pod describe logs to their files
 	podDescribeLogsFileNameFormat := "%s-describe-log.txt"
 	if err := pods.WritePodDescribeLogsToFile(podDescribeLogs, podDescribeLogsFileNameFormat, podsDirectory); err != nil {
-		return err
+		return nil, err
 	}
 
 	// write pod events to their files
@@ -95,7 +103,7 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 		logger.Info(fmt.Sprintf("Pod details: %s: Total Files: %d", podsDirectory, fileCount))
 	}
 
-	return nil
+	return failedPodNames, nil
 }
 
 // getPodDetailsBySelector retrieves pod details (List, Logs, Describe, and Events)

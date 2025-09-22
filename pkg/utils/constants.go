@@ -128,3 +128,5 @@ const NodeAffinityHostNameKey = "kubernetes.io/hostname"
 const PodCreationWatcher = "PodCreation"
 
 const PodDeletionWatcher = "PodDeletion"
+
+const PodRunningStatus = "Running"

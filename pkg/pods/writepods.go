@@ -57,7 +57,7 @@ func WritePodDetailsToFile(podList []corev1.Pod, fileNameFormat, outputDir strin
 			totalContainers := len(pod.Status.ContainerStatuses)
 			readyContainers := getReadyContainersCount(pod)
 			ready := fmt.Sprintf("%d/%d", readyContainers, totalContainers)
-			podStatus := getPodStatus(pod)
+			podStatus := GetPodStatus(pod)
 			restartCount := getContainerRestartCount(pod)
 
 			//TODO: where to get the last-restart time like: (17h ago)
@@ -240,7 +240,7 @@ func getReadyContainersCount(pod corev1.Pod) int {
 	return readyCount
 }
 
-func getPodStatus(pod corev1.Pod) string {
+func GetPodStatus(pod corev1.Pod) string {
 
 	for _, container := range pod.Status.ContainerStatuses {
 

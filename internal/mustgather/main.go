@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
@@ -114,7 +115,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	logger.Info("---- Collecting pod details ----")
 	fmt.Print("Collecting pod details...")
 	mustGatherStartTime := time.Now()
-	err = gatherPodsToFiles(coreClient, flags, logger)
+	failedPodNames, err := gatherPodsToFiles(coreClient, flags, logger)
 	if err != nil {
 		return err
 	}
@@ -144,11 +145,13 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	logger.Info("---- Ingress details collected ----")
 
 	// identify the pod-owner
-	podOwner := utils.GetPodOwner(qmPod)
+	var podOwner string
 
 	if qmPod == nil && flags.QueueManagerName != "" {
 		// If the queuemanager pod is nil default to StatefulSet
 		podOwner = utils.KindStatefulSet
+	} else {
+		podOwner = utils.GetPodOwner(qmPod)
 	}
 
 	// based on the pod owner collect the required must-gathers
@@ -287,7 +290,24 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	fmt.Printf("Must-Gather tool run completed... Took: %v\n", time.Since(mustGatherToolStartTime))
 	logger.Info("---- Must-Gather tool run completed ----")
 
-	fmt.Printf("Must-gather's collected, logs can be found at: %s\n", utils.GetLogFilePath(flags.OutputDir, utils.MustGatherLogFileName))
+	fmt.Printf("Must-gather's collected, logs can be found at: %s\n\n", utils.GetLogFilePath(flags.OutputDir, utils.MustGatherLogFileName))
+
+	// If we have found failed pods, then recommend the must-gather tool command
+	if len(failedPodNames) > 0 {
+		logger.Info(fmt.Sprintf("Must-Gather tool run detected %d failing pods: [%s]", len(failedPodNames), strings.Join(failedPodNames, ", ")))
+
+		pvcInspectorCommand := fmt.Sprintf("./mq-inspector pvctool --pod-name %s --qm-namespace %s", failedPodNames[0], flags.QueueManagerNamespace)
+
+		fmt.Printf(`Must-Gather tool run detected %d failing pods.
+
+This tool is unable to gather runmqras logs for failing pods.
+We recommend running the following command to create pvc-inspector pods, which will collect the failing pods PVC data:
+
+For non-airgap: %s
+For airgap:    %s
+`, len(failedPodNames), pvcInspectorCommand, fmt.Sprintf("%s --dry-run", pvcInspectorCommand))
+
+	}
 
 	return nil
 
