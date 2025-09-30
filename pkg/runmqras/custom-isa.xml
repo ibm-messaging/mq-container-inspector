@@ -1,0 +1,212 @@
+<?xml version="1.0"?>
+
+<!--
+ <copyright
+ notice="lm-source-program"
+ pids="5724-H72,"
+ years="2011,2024"
+ crc="3504564584" >
+Licensed Materials - Property of IBM
+
+5724-H72,
+
+(C) Copyright IBM Corp. 2011, 2024 All Rights Reserved.
+
+US Government Users Restricted Rights - Use, duplication or
+disclosure restricted by GSA ADP Schedule Contract with
+IBM Corp.
+ </copyright>
+ -->
+
+<!--
+    SCCSID = @(#) MQMBID sn=p930-021-240813 su=_5hf3gllUEe-keo13uVeakA pn=cmd/cs/isa.xml.pre
+ -->
+ 
+<!--
+    Sections removed : defs, platforms-aix, windows, macOS, OS/400, NONSTOP_KERNEL, mft, mq-appliance
+	Several commands removed
+ -->
+
+<body>
+
+<commands platform="Linux">
+<!-- The working directory does not have write permission for group members.
+     "chmod" is required to work around this permission problem.
+ -->
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"MQBIN::/dspmqinst"' output="dspmqinst" env="mq"/>
+    <command name="/bin/ls" args='-iaRlL "MQD::"' output="datafiles"/>
+    <command name="/bin/ls" args="-iaRlL QMD::" qm="*" output="datafiles_SQM::"/>
+    <command name="/bin/ls" args="-iaRlL QML::" qm="*" output="logfiles_SQM::"/>
+    <command name="/bin/ls" args='-iaRlL "MQD::/errors"' output="errors"/>
+    <command name="cat" args="/sys/devices/system/clocksource/clocksource0/available_clocksource" output="available_clocksource"/>
+    <command name="cat" args="/sys/devices/system/clocksource/clocksource0/current_clocksource" output="current_clocksource"/>
+    <command name="/bin/df" args="-i QMD::" qm="*" output="dfiqm_SQM::" env="!mqappliance"/>
+    <command name="/usr/bin/id" args="mqm" output="idmqm" env="mq"/>
+    <command name="/usr/sbin/ip" args="address" output="ip-address" env="rdqm"/>
+    <command name="/usr/sbin/ip" args="route" output="ip-route" env="rdqm"/>
+    <command name="/usr/sbin/ip" args="rule" output="ip-rule" env="rdqm"/>
+    <command name="/usr/bin/ls" args="-ld /etc/corosync" output="ls-ld-etc-corosync" env="rdqm"/>
+    <command name="/usr/bin/ls" args="-ld /etc/drbd.d" output="ls-ld-etc-drbd.d" env="rdqm"/>
+    <command name="/usr/bin/ls" args="-l /etc/corosync" output="ls-l-etc-corosync" env="rdqm"/>
+    <command name="/usr/bin/ls" args="-l /etc/drbd.d" output="ls-l-etc-drbd.d" env="rdqm"/>
+    <command name="/usr/sbin/tc" args="qdisc" output="tc-qdisc" env="rdqm"/>
+    <command name="/usr/sbin/cibadmin" args="--query" output="cibadmin" env="rdqm"/>
+    <command name="/usr/sbin/crm" args="config show" output="crm-config" env="rdqm"/>
+    <command name="/usr/sbin/crm" args="status" output="crm-status" env="rdqm"/>
+    <command name="/usr/sbin/drbdadm" args="-v dstate all" output="drbdadm-dstate" env="rdqm"/>
+    <command name="/usr/sbin/drbdadm" args="dump" output="drbdadm-dump" env="rdqm"/>
+    <command name="/usr/sbin/drbdadm" args="status" output="drbdadm-status" env="rdqm"/>
+    <command name="/usr/sbin/drbdadm" args="--version" output="drbdadm-version" env="rdqm"/>
+    <command name="/usr/sbin/drbdsetup" args="show" output="drbdsetup-show" env="rdqm"/>
+    <command name="/usr/sbin/drbdsetup" args="show --show-defaults" output="drbdsetup-show-defaults" env="rdqm"/>
+    <command name="/usr/sbin/drbdsetup" args="status -vvs" output="drbdsetup-status-vvs" env="rdqm"/>
+    <command name="/usr/sbin/drbdsetup" args="events2 --statistics --now all --timestamp" output="drbdsetup-events2" env="rdqm"/>
+    <command name="MQBIN::/rdqmadm" args="-x" output="rdqmadm-x" env="rdqm"/>
+    <command name="MQBIN::/rdqmadm" args="-xd WorkDir::/drbd_debug" output="rdqmadm-xd" env="rdqm"/>
+    <command name="MQBIN::/rdqmadm" args="-xm" output="rdqmadm-xm" env="rdqm"/>
+    <command name="MQBIN::/rdqmadm" args="-xr WorkDir::/crm_report" output="rdqmadm-xr" timeout="0" env="rdqm"/>
+    <command name="MQBIN::/rdqmstatus" output="rdqmstatus" env="rdqm"/>
+    <command name="MQBIN::/rdqmstatus" args="-n" output="rdqmstatus-n" env="rdqm"/>
+    <command name="/usr/bin/cat" args="/proc/cpuinfo" output="cpuinfo"/>
+    <command name="/usr/bin/dmesg" output="dmesg" env="rdqm"/>
+    <command name="/usr/bin/dmesg" args="-T" output="dmesg-T" env="rdqm"/>
+</commands>
+
+<files platform="Linux">
+    <file path="MQD::/errors" detail="*"/>
+    <file path="MQD::" detail="mqs.ini"/>
+    <file path="MQD::" detail="mqclient.ini"/>
+    <file path="QMD::" qm="*" detail="qm.ini"/>
+    <file path="QMD::" qm="*" detail="mqat.ini"/>
+    <file path="QMD::" qm="*" detail="qm.env"/>
+    <file path="QMD::" qm="*" detail="active"/>
+    <file path="QMD::" qm="*" detail="blockaddr.ini"/>
+    <file path="QMD::" qm="*" detail="master"/>
+    <file path="QMD::" qm="*" detail="qmstatus.ini"/>
+    <file path="QMD::" qm="*" detail="amqalchk.fil"/>
+    <file path="QMD::" qm="*" detail="mqxr.*" />
+    <file path="QMD::/" qm="*" detail="amqp.*"/>
+    <file path="QMD::/ssl" qm="*" detail="keystore.conf" />
+    <file path="QMD::/errors" qm="*" detail="*"/>
+    <file path="QMD::/amqp" qm="*" detail="*"/>
+    <file path="QMD::/mqxr" qm="*" detail="*"/>
+    <file path="QMD::/autocfg" qm="*" detail="*"/>
+    <file path="MQD::/exits" detail="*.log"  recursive="yes"/>
+    <file path="MQD::/exits64" detail="*.log"  recursive="yes"/>
+    <file path="QML::" qm="*" detail="amqhlctl.lfh"/>
+    <file path="QML::" qm="*" detail="nativeha.ini"/>
+    <file path="/etc" detail="redhat-release" env="mq"/>
+    <file path="/etc" detail="suse-release" env="mq"/>
+    <file path="$HOME/IBM/WebSphereMQ/workspace-MQI::/.metadata/" detail=".log" env="mq"/>
+    <file path="$HOME/IBM/WebSphereMQ/workspace-MQI::/.metadata/.plugins/com.ibm.mq.explorer.ui" detail="*" env="mq"/>
+    <file path="/etc/opt/mqm" detail="mqinst.ini" />
+    <file path="MQ::" detail="mqpatch.dat" />
+    <file path="MQ::" detail="mqpatch.log" />
+    <file path="MQD::/mqxr/config" detail="*"/>
+    <file path="/etc/corosync" detail="corosync.conf" env="rdqm"/>
+    <file path="/etc" detail="drbd.conf" env="rdqm"/>
+    <file path="/etc/drbd.d" detail="*" env="rdqm"/>
+    <file path="/proc/net" detail="tcp" env="rdqm"/>
+    <file path="MQD::" detail="rdqm.ini" env="rdqm"/>
+    <file path="MQD::/web" detail="*" recursive="yes" env="!mqappliance"/>
+    <file path="MQ::" detail="MANIFEST*" env="mq"/>
+    <file path="/var/log" detail="messages"/>
+    <file path="MQD::/rdqm" detail="*.ini" env="rdqm"/>
+    <file path="MQD::/conv" detail="*.tbl" recursive="yes"/>
+</files>
+
+<commands platform="Linux" section="cluster">
+    <command name='"MQBIN::/amqrfdm"' args="-m QM:: -d" qm="*" output="amqrfdm_SQM::" env="mq"/>
+    <command name='"MQBIN::/amqrfdm"' args="-m QM:: -h ZIP::" qm="*" output="amqrfdm_h_SQM::" env="mq"/>
+    <command name='"MQBIN::/dmpmqmsg"' args="-m QM:: -i SYSTEM.CLUSTER.REPOSITORY.QUEUE -da -F ZIP::SCRQ_SQM::.out" qm="*" output="dmpmqmsg_SQM::_SCRQ" env="mq"/>
+    <command name='"MQBIN::/dmpmqmsg"' args="-m QM:: -i SYSTEM.CLUSTER.COMMAND.QUEUE -da -F ZIP::SCCQ_SQM::.out" qm="*" output="dmpmqmsg_SQM::_SCCQ" env="mq"/>
+    <command name='"MQBIN::/dmpmqmsg"' args="-m QM:: -i SYSTEM.CLUSTER.TRANSMIT.QUEUE -da -F ZIP::SCTQ_SQM::.out" qm="*" output="dmpmqmsg_SQM::_SCTQ" env="mq"/>
+    <command name='"MQBIN::/dmpmqmsg"' args="-m QM:: -i SYSTEM.CLUSTER.HISTORY.QUEUE -da -F ZIP::SCHQ_SQM::.out" qm="*" output="dmpmqmsg_SQM::_SCHQ" env="mq"/>
+</commands>
+
+<commands platform="Linux" section="cs">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name="MQBIN::/amqspdbg" args="-m QM:: -f ZIP::amqspdbg_SQM::.out" qm="*" output="amqspdbg_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="kernel">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c K -d 15 -f ZIP::amqldmpa_kernel_SQM::.out" qm="*" output="amqldmpa_kernel_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="dap">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c A -d 15 -f ZIP::amqldmpa_dap_SQM::.out" qm="*" output="amqldmpa_dap_SQM::"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c A -o 2 -d 15 -f ZIP::amqldmpa_dap_atm_SQM::.out" qm="*" output="amqldmpa_dap_atm_SQM::"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c A -o 4 -d 15 -f ZIP::amqldmpa_dap_alm_SQM::.out" qm="*" output="amqldmpa_dap_alm_SQM::"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c A -o 16 -d 15 -f ZIP::amqldmpa_dap_aoc_SQM::.out" qm="*" output="amqldmpa_dap_aoc_SQM::"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c A -o 64 -d 15 -f ZIP::amqldmpa_dap_aom_SQM::.out" qm="*" output="amqldmpa_dap_aom_SQM::"/>
+    <command name='"MQBIN::/dspmqtrn"' args="-q -a -m QM::" qm="*" output="dspmqtrn_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="topic">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c T -d 15 -f ZIP::amqldmpa_topic_SQM::.out" qm="*" output="amqldmpa_topic_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="logger">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c H -d 15 -f ZIP::amqldmpa_logger_SQM::.out" qm="*" output="amqldmpa_logger_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="nativeha">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c NATIVEHA -d 15 -f ZIP::amqldmpa_nativeha_SQM::.out" qm="*" output="amqldmpa_nativeha_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="selector">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c S -d 15 -f ZIP::amqldmpa_selector_SQM::.out" qm="*" output="amqldmpa_selector_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="remote">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c R -d 15 -f ZIP::amqldmpa_remote_SQM::.out" qm="*" output="amqldmpa_remote_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="streamq">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"MQBIN::/amqldmpa"' args="-m QM:: -c STREAMQ -d 15 -f ZIP::amqldmpa_streamq_SQM::.out" qm="*" output="amqldmpa_streamq_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="format">
+    <command name='cd' args='"MQD::/trace"&amp;&amp;dspmqtrc *  ' output="dspmqtrc" timeout="0" env="!mqappliance"/>
+</commands>
+
+<!-- mqweb and webui sections have same effect on the appliance. -->
+<commands platform="Linux" section="mqweb">
+    <command name="/bin/chmod" args="775 ZIP::" output="chmod"/>
+    <command name='"WLP::/bin/server"' args="dump mqweb --archive=WorkDir::/wlp_dump.zip" output="wlp_dump" timeout="120" env="!mqappliance"/>
+</commands>
+
+<files platform="Linux" section="QMGR">
+    <file path="QMD::/" qm="*" detail="*" recursive="yes" exclude="userdata"/>
+    <file path="QML::/" qm="*" detail="*" recursive="yes"/>
+</files>
+
+<files platform="Linux" section="trace">
+    <file path="MQD::/trace" detail="*"/>
+</files>
+
+<!-- mqweb and webui sections have same effect on the appliance. -->
+<files platform="Linux" section="mqweb">
+    <file path="WorkDir::/" detail="wlp_dump.zip" env="!mqappliance"/>
+    <file path="WLP::/mq/etc" detail="mqweb.xml" env="!mqappliance"/>
+</files>
+
+<commands platform="Linux" section="leak">
+  <command name="ps" args="-ef | egrep 'amqzlaa0|amqrmppa' | grep -v grep | awk '{ print $2 }' | xargs -I {} pmap -x {}" output="pmap-leak"/>
+  <command name="MQBIN::/amqspdbg" args="-m QM:: -v detail -f ZIP::amqspdbg-v_SQM::.out" qm="*" output="amqspdbg-v_SQM::"/>
+</commands>
+
+<commands platform="Linux" section="environ">
+  <command name="ps" args="-ef | awk '{ print $2 }' | xargs -I {} strings -f /proc/{}/environ|grep -v 'ftppassword'" output="environ_all"/>
+</commands>
+
+</body>

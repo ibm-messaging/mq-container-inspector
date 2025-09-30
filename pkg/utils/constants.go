@@ -65,6 +65,8 @@ const KindIntegrationKeycloakClient = "IntegrationKeycloakClient"
 
 const KindCRD = "CustomResourceDefinition"
 
+const KindConfigMap = "ConfigMap"
+
 const QmgrGroup = "mq.ibm.com"
 
 const QmgrVersion = "v1beta1"
@@ -130,3 +132,11 @@ const PodCreationWatcher = "PodCreation"
 const PodDeletionWatcher = "PodDeletion"
 
 const PodRunningStatus = "Running"
+
+const CustomISAConfigMap = "mq-inspector-runmqras-config"
+
+const CustomISAFilePath = "./pkg/runmqras/custom-isa.xml"
+
+const CustomISAFileName = "custom-isa.xml"
+
+const MQInspectorManagedLabel = "app.kubernetes.io/managed-by:mq-inspector"

@@ -51,7 +51,7 @@ func gatherRunmqrasLogToFiles(cfg *rest.Config, coreClient kubernetes.Interface,
 
 	}
 
-	runmqrasCopyConfigs, err := runmqras.ExecRunmqrasBySelector(cfg, coreClient, podList, flags.QueueManagerNamespace, logger)
+	runmqrasCopyConfigs, err := runmqras.ExecRunmqrasBySelector(cfg, coreClient, podList, flags.QueueManagerNamespace, utils.QmgrContainer, logger, false)
 	if err != nil {
 		// continue in case of error
 		logger.Error(fmt.Sprintf("unable to execute runmqras command in container, the reason being: %v\n", err))

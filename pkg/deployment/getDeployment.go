@@ -86,9 +86,9 @@ func GetDeploymentEventsBySelector(client kubernetes.Interface, selector, namesp
 //   - client: the Kubernetes client used to interact with the cluster.
 //   - podName: the pod name used to filter the deployments.
 //   - namespace: the namespace in which to search for the deployments.
-func GetDeploymentsByPodName(client kubernetes.Interface, podName, namesapce string) (*appsv1.Deployment, error) {
+func GetDeploymentsByPodName(client kubernetes.Interface, podName, namespace string) (*appsv1.Deployment, error) {
 
-	pod, err := pods.GetPodByName(client, podName, namesapce)
+	pod, err := pods.GetPodByName(client, podName, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func GetDeploymentsByPodName(client kubernetes.Interface, podName, namesapce str
 	}
 
 	// Get the deployment name from the replicaSet
-	replicaSet, err := client.AppsV1().ReplicaSets(namesapce).Get(context.TODO(), ownerName, metav1.GetOptions{})
+	replicaSet, err := client.AppsV1().ReplicaSets(namespace).Get(context.TODO(), ownerName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func GetDeploymentsByPodName(client kubernetes.Interface, podName, namesapce str
 		return nil, fmt.Errorf("error no deployemnt found as the contoller owner for the %s replica set", replicaSet.Name)
 	}
 
-	deployment, err := client.AppsV1().Deployments(namesapce).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+	deployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

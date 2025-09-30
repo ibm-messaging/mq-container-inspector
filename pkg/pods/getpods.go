@@ -263,13 +263,11 @@ func GetPodDescribeLogs(client kubernetes.Interface, pods []corev1.Pod, namespac
 			GroupVersionKind: corev1.SchemeGroupVersion.WithKind(utils.KindPod),
 		})
 		if err != nil {
-			fmt.Println("Error 245")
 			return nil, err
 		}
 
 		podDescribeData, err := resourceDescriber.Describe(namespace, pod.Name, describerSettings)
 		if err != nil {
-			fmt.Println("Error 251")
 			return nil, err
 		}
 

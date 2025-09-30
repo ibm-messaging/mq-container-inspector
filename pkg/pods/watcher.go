@@ -77,8 +77,8 @@ func getPodWatcherCondition(watchFor string, logger *slog.Logger) func(watch.Eve
 			}
 
 			if pod.DeletionTimestamp != nil {
-				fmt.Printf("PVC-inspectpr pod %s is terminating\n", pod.ObjectMeta.Name)
-				logger.Info(fmt.Sprintf("PVC-inspectpr pod %s is terminating", pod.ObjectMeta.Name))
+				fmt.Printf("PVC-inspector pod %s is terminating\n", pod.ObjectMeta.Name)
+				logger.Info(fmt.Sprintf("PVC-inspector pod %s is terminating", pod.ObjectMeta.Name))
 			}
 
 			return false, nil

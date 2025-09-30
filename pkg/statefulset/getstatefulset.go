@@ -86,9 +86,9 @@ func GetStatefulSetEventsBySelector(client kubernetes.Interface, selector, names
 //   - client: the Kubernetes client used to interact with the cluster.
 //   - podName: the pod name used to filter the StatefulSets.
 //   - namespace: the namespace in which to search for the StatefulSets.
-func GetStatefulSetDetailsByPodName(client kubernetes.Interface, podName, namesapce string) (*appsv1.StatefulSet, error) {
+func GetStatefulSetDetailsByPodName(client kubernetes.Interface, podName, namespace string) (*appsv1.StatefulSet, error) {
 
-	pod, err := pods.GetPodByName(client, podName, namesapce)
+	pod, err := pods.GetPodByName(client, podName, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func GetStatefulSetDetailsByPodName(client kubernetes.Interface, podName, namesa
 		return nil, fmt.Errorf("error no statefulset found as the contoller owner for the %s pod", pod.Name)
 	}
 
-	statefulSetDetails, err := client.AppsV1().StatefulSets(namesapce).Get(context.TODO(), ownerName, metav1.GetOptions{})
+	statefulSetDetails, err := client.AppsV1().StatefulSets(namespace).Get(context.TODO(), ownerName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -122,13 +122,13 @@ func GetStatefulSetDetailsByPodName(client kubernetes.Interface, podName, namesa
 //   - client: the Kubernetes client used to interact with the cluster.
 //   - statefulSetName: the statefulSet name to fetch the events for.
 //   - namespace: the namespace in which to search for the StatefulSets.
-func GetStatefulSetEventsByName(client kubernetes.Interface, statefulSetName, namesapce string) (map[string][]corev1.Event, error) {
+func GetStatefulSetEventsByName(client kubernetes.Interface, statefulSetName, namespace string) (map[string][]corev1.Event, error) {
 
 	statefulSetEventsMap := make(map[string][]corev1.Event)
 
 	fieldSelector := fmt.Sprintf("involvedObject.name=%s", statefulSetName)
 
-	statefulSetEvents, err := client.CoreV1().Events(namesapce).List(context.TODO(), metav1.ListOptions{
+	statefulSetEvents, err := client.CoreV1().Events(namespace).List(context.TODO(), metav1.ListOptions{
 		FieldSelector: fieldSelector,
 	})
 	if err != nil {

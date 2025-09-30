@@ -88,12 +88,23 @@ func PVCInspectorTool(cfg *rest.Config, flags utils.PVCInspectorFlags) error {
 
 	// verify pvc-pods exist, will be nil with no error when dry-run is enabled
 	if pvcPods != nil {
+
 		logger.Info(fmt.Sprintf("%d pvc-inspector pods created in %s namespace", len(pvcPods), flags.QueueManagerNamespace))
+
+		if flags.Runmqras {
+			fmt.Println("Collecting runmqras details(This may take time)")
+			logger.Info("The runmqras flag is enabled; executing runmqras on the pvc-inspector pods")
+			if err := pvcinspector.ExecuteRunmqras(cfg, coreClient, pvcPods, flags, logger); err != nil {
+				logger.Error(fmt.Sprintf("Error while running runmqras for the pvc-inspector tool: %v", err))
+			}
+			logger.Info("Completed runmqras execution")
+
+		}
 
 		if flags.Cleanup {
 			logger.Info("PVC-pods cleanup has been enabled")
 			logger.Info(fmt.Sprintf("Starting cleanup for the %d pvc-inspector pods", len(pvcPods)))
-			pvcinspector.DeletePVCPods(coreClient, pvcPods, flags.QueueManagerNamespace, logger)
+			pvcinspector.DeletePVCPods(coreClient, pvcPods, flags, logger)
 			logger.Info("Cleanup process completed")
 		}
 	}

@@ -223,7 +223,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 
 	if flags.QueueManagerName != "" {
 		// collect MQ operator must-gathers
-		logger.Info("---- Collecting mq-operator details ----")
+		logger.Info("---- Collecting mq-operator details(This may take time) ----")
 		fmt.Print("Collecting mq-operator details...")
 		mustGatherStartTime = time.Now()
 		err = gatherMQOperatorToFiles(coreClient, dynamicClient, flags, logger)

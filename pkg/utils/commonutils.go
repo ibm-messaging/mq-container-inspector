@@ -48,6 +48,7 @@ type PVCInspectorFlags struct {
 	Cleanup               bool   // whether to cleanup the pvc-pods at the end of the tool run
 	DryRun                bool   // whether to create the pvc-pods
 	NoTar                 bool   // whether to tar+zip the pvc-inspector output
+	Runmqras              bool   // whether to run the runmqras command automatically
 }
 
 func GetCurrentTimestamp(timeFormat string) string {

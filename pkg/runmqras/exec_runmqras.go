@@ -34,14 +34,16 @@ import (
 // Parameters:
 //   - cfg: the kubernetes config
 //   - client: the Kubernetes client used to interact with the cluster.
-//   - selector: the label selector used to filter the routes.
-//   - namespace: the namespace in which to search for the routes.
-func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, podList []corev1.Pod, namespace string, logger *slog.Logger) ([]container.CopyConfig, error) {
+//   - selector: the label selector used to filter the pods.
+//   - namespace: the namespace in which to search for the pods.
+//   - baseContainer: the container inside which to run the runmqras.
+//   - useCustomFile: tells the runmqras tool that it will be run using a custom file
+func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, podList []corev1.Pod, namespace, baseContainer string, logger *slog.Logger, useCustomFile bool) ([]container.CopyConfig, error) {
 
 	var runmqrasPodExecutorList []container.CopyConfig
 
 	for _, pod := range podList {
-		copyConfig, err := execRunmqras(cfg, pod)
+		copyConfig, err := execRunmqras(cfg, pod, useCustomFile, baseContainer)
 		if err != nil {
 			// log the error, and continue trying to run the runmqras for other pods in podList
 			logger.Error(fmt.Sprintf("error while executing runmqras inside pod %s: %v", pod.Name, err))
@@ -53,7 +55,7 @@ func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, podLi
 	return runmqrasPodExecutorList, nil
 }
 
-func execRunmqras(cfg *rest.Config, pod corev1.Pod) (container.CopyConfig, error) {
+func execRunmqras(cfg *rest.Config, pod corev1.Pod, useCustomFile bool, baseContainer string) (container.CopyConfig, error) {
 
 	currentTimestamp := utils.GetCurrentTimestamp(utils.TimestampFormat)
 	workDir := fmt.Sprintf("/tmp/runmqras_%s", currentTimestamp)
@@ -61,13 +63,19 @@ func execRunmqras(cfg *rest.Config, pod corev1.Pod) (container.CopyConfig, error
 	cmd := []string{
 		"runmqras",
 		"-workdirectory", workDir,
-		"-section", "logger,mqweb,nativeha,trace",
 	}
+
+	if useCustomFile {
+		cmd = append(cmd, "-inputfile", fmt.Sprintf("/run/%s", utils.CustomISAFileName))
+	} else {
+		cmd = append(cmd, "-section", "logger,mqweb,nativeha,trace")
+	}
+
 	runmqras := utils.ExecConfig{
 		KubernetesConfig: cfg,
 		PodName:          pod.Name,
 		Namespace:        pod.Namespace,
-		ContainerName:    utils.QmgrContainer,
+		ContainerName:    baseContainer,
 		Cmd:              cmd,
 	}
 	execRequestExecutor, err := pods.ExecCmd(runmqras)
