@@ -32,6 +32,10 @@ func MustGather(args []string) error {
 	// create flagset for "mustgather" os arg, and parse the args
 	flags, err := parseFlags(args)
 	if err != nil {
+		if err.Error() == "help" {
+			// Help was requested, so return after printing usage
+			os.Exit(0)
+		}
 		return fmt.Errorf("error parsing mustgather flags: %v", err)
 	}
 
@@ -69,14 +73,15 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 
 	flagSet := flag.NewFlagSet(utils.MustGather, flag.ContinueOnError)
 
-	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name")
-	flagSet.StringVar(&flags.PodName, "pod-name", "", "pod name of the mq instance")
-	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "QueueManager custom resource metadata.namespace (required)")
-	flagSet.StringVar(&flags.OperatorNamespace, "operator-namespace", "", "MQ Operator namespace")
-	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "kubeconfig file path, defaults to '.kube/config'")
-	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "output directory where the must-gather files will be stored, defaults to current-working-directory")
-	flagSet.BoolVar(&flags.NoTar, "no-tar", false, "whether or not to tar the must-gathers, defaults to false")
-	flagSet.BoolVar(&flags.NoExec, "no-exec", false, "disable must-gathers commands that require container exec access (e.g. runmqras, webconsole logs), defaults to false")
+	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name (exactly one of --qm-name or --pod-name are required)")
+	flagSet.StringVar(&flags.PodName, "pod-name", "", "name of a queue manager pod in the target queue manager instance (exactly one of --qm-name or --pod-name are required)")
+	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "namespace where the queue manager is deployed (required)")
+	flagSet.StringVar(&flags.OperatorNamespace, "operator-namespace", "", "namespace where the MQ operator is deployed (default: --qm-namespace)")
+	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "path to the kubeconfig file. Ignored when running via mustgather image (default: ~/.kube/config)")
+	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "directory where the must-gather output folder will be created. Ignored when running via mustgather image (default: current working directory)")
+	flagSet.BoolVar(&flags.SkipTar, "skip-tar", false, "skip compressing the must-gather output into a tar.gz file (default: false)")
+	flagSet.BoolVar(&flags.SkipExec, "skip-exec", false, "skip gathering diagnostic data that require container exec access, e.g. runmqras, webconsole logs (default: false)")
+	flagSet.BoolVar(&flags.Help, "help", false, "show help message")
 	flagSet.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", flagSet.Name())
 		flagSet.VisitAll(func(f *flag.Flag) {
@@ -87,6 +92,10 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 	err := flagSet.Parse(args)
 	if err != nil {
 		return flags, err
+	}
+	if flags.Help {
+		flagSet.Usage()
+		return flags, fmt.Errorf("help")
 	}
 	if len(flagSet.Args()) > 0 {
 		return flags, fmt.Errorf("unexpected arguments: %v", flagSet.Args())
@@ -149,15 +158,15 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 func validateRequiredFlags(flags utils.MustGatherFlags) (bool, string) {
 
 	if flags.QueueManagerNamespace == "" {
-		return false, "error: --qm-namespace is required"
+		return false, "--qm-namespace is required"
 	}
 
 	if flags.QueueManagerName == "" && flags.PodName == "" {
-		return false, "error: at least one of --qm-name or --pod-name must be provided"
+		return false, "exactly one of --qm-name or --pod-name must be provided"
 	}
 
 	if flags.QueueManagerName != "" && flags.PodName != "" {
-		return false, "error: only one of --qm-name or --pod-name should be provided"
+		return false, "only one of --qm-name or --pod-name can be provided"
 	}
 
 	return true, ""

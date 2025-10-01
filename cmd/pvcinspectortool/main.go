@@ -33,7 +33,11 @@ func PVCIncpectorTool(args []string) error {
 	// create flagset for "mustgather" os arg, and parse the args
 	flags, err := parseFlags(args)
 	if err != nil {
-		return fmt.Errorf("error parsing pvc-inspector tool flags: %v", err)
+		if err.Error() == "help" {
+			// Help was requested, so return after printing usage
+			os.Exit(0)
+		}
+		return fmt.Errorf("unable to parse pvctool flags: %v", err)
 	}
 
 	// handle non-required flag defaults
@@ -71,14 +75,15 @@ func parseFlags(args []string) (utils.PVCInspectorFlags, error) {
 	flagSet := flag.NewFlagSet(utils.PVCInspector, flag.ContinueOnError)
 
 	// The qm-namespace is required flag and at least one of qm-name or pod-name must be specified
-	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name")
-	flagSet.StringVar(&flags.PodName, "pod-name", "", "pod name of the mq instance")
-	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "QueueManager custom resource metadata.namespace (required)")
-	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "kubeconfig file path, defaults to '.kube/config'")
-	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "output directory where the must-gather files will be stored, defaults to current-working-directory")
-	flagSet.BoolVar(&flags.Cleanup, "cleanup", false, "whether or not to delete the pvc-inspector pods at the end of the tool run, defaults to false")
-	flagSet.BoolVar(&flags.DryRun, "dry-run", false, "run without creating the pvc-inspector pods, defaults to false")
-	flagSet.BoolVar(&flags.NoTar, "no-tar", false, "whether or not to tar the pvc-inspector details, defaults to false")
+	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name (exactly one of --qm-name or pod-name are required)")
+	flagSet.StringVar(&flags.PodName, "pod-name", "", "name of a queue manager pod in the target queue manager instance (exactly one of --qm-name or pod-name are required)")
+	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "namespace where the queue manager is deployed (required)")
+	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "path to the kubeconfig file. Ignored when running via mustgather image. (default: ~/.kube/config)")
+	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "directory where the must-gather output folder will be created. Ignored when running via mustgather image. (default: current working directory)")
+	flagSet.BoolVar(&flags.Cleanup, "cleanup", false, "delete the pvc-inspector pods at the end of the tool run (default: false)")
+	flagSet.BoolVar(&flags.DryRun, "dry-run", false, "run without creating the pvc-inspector pods (default: false)")
+	flagSet.BoolVar(&flags.SkipTar, "skip-tar", false, "skip compressing the pvctool output into a tar.gz file (default: false)")
+	flagSet.BoolVar(&flags.Help, "help", false, "show help message")
 	flagSet.BoolVar(&flags.Runmqras, "runmqras", false, "execute runmqras on the pvc-inspector pods (default: false)")
 	flagSet.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", flagSet.Name())
@@ -90,6 +95,10 @@ func parseFlags(args []string) (utils.PVCInspectorFlags, error) {
 	err := flagSet.Parse(args)
 	if err != nil {
 		return flags, err
+	}
+	if flags.Help {
+		flagSet.Usage()
+		return flags, fmt.Errorf("help")
 	}
 	if len(flagSet.Args()) > 0 {
 		return flags, fmt.Errorf("unexpected arguments: %v", flagSet.Args())
@@ -152,15 +161,15 @@ func setDefaultFlags(flags *utils.PVCInspectorFlags) error {
 func validateRequiredFlags(flags utils.PVCInspectorFlags) (bool, string) {
 
 	if flags.QueueManagerNamespace == "" {
-		return false, "error: --qm-namespace is required"
+		return false, "--qm-namespace is required"
 	}
 
 	if flags.QueueManagerName == "" && flags.PodName == "" {
-		return false, "error: at least one of --qm-name or --pod-name must be provided"
+		return false, "exactly one of --qm-name or --pod-name must be provided"
 	}
 
 	if flags.QueueManagerName != "" && flags.PodName != "" {
-		return false, "error: only one of --qm-name or --pod-name should be provided"
+		return false, "only one of --qm-name or --pod-name can be provided"
 	}
 
 	return true, ""

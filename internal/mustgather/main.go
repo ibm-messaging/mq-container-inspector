@@ -96,7 +96,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- queue manager details collected ----")
 
 		// collect queue manager crd must-gathers
@@ -107,7 +107,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- queue manager crd details collected ----")
 	}
 
@@ -119,7 +119,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 	logger.Info("---- Pod details collected ----")
 
 	// collect the route must-gathers
@@ -130,7 +130,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 	logger.Info("---- Route details collected ----")
 
 	// collect the ingress must-gathers
@@ -141,7 +141,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 	logger.Info("---- Ingress details collected ----")
 
 	// identify the pod-owner
@@ -166,7 +166,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- StatefulSet details collected ----")
 
 	case utils.KindReplicaSet:
@@ -179,7 +179,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- Deployment details collected ----")
 
 	case utils.KindDaemonSet:
@@ -192,7 +192,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- DaemonSet details collected ----")
 
 	default:
@@ -207,7 +207,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 	logger.Info("--- Service details collected ----")
 
 	// collect PVC must-gathers
@@ -218,7 +218,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 	logger.Info("---- PVC details collected ----")
 
 	if flags.QueueManagerName != "" {
@@ -230,7 +230,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- MQ-Operator details collected ----")
 
 		// collect the cp4i csv details
@@ -241,12 +241,12 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- CP4I details collected ----")
 	}
 
-	// if no-exec is disabled then collect the web-console and runmqras logs
-	if !flags.NoExec {
+	// if skip-exec is disabled then collect the web-console and runmqras logs
+	if !flags.SkipExec {
 		// collect web-console logs
 		logger.Info("---- Collecting web-console details ----")
 		fmt.Print("Collecting web-console details...")
@@ -255,7 +255,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- Web-console details collected ----")
 
 		// collect runmqras logs
@@ -266,7 +266,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- Runmqras details collected ----")
 	}
 
@@ -275,8 +275,8 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		logger.Error(err.Error())
 	}
 
-	// if no-tar is disabled, then tar the must-gather output
-	if !flags.NoTar {
+	// if skip-tar is disabled, then tar the must-gather output
+	if !flags.SkipTar {
 		fmt.Print("Compressing the logs...")
 		mustGatherStartTime = time.Now()
 
@@ -284,7 +284,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 			return fmt.Errorf("error tar zipping the collected must-gather at path %s: %v", flags.OutputDir, err)
 		}
 
-		fmt.Printf("Must Gathers archived. Took: %v\n", time.Since(mustGatherStartTime))
+		fmt.Printf("Must Gathers archived. Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 	}
 
 	fmt.Printf("Must-Gather tool run completed... Took: %v\n", time.Since(mustGatherToolStartTime))

@@ -109,7 +109,7 @@ func PVCInspectorTool(cfg *rest.Config, flags utils.PVCInspectorFlags) error {
 		}
 	}
 
-	if !flags.NoTar {
+	if !flags.SkipTar {
 		logger.Info("tar-zip flag enabled, compressing the collected pvc-data")
 		fmt.Println("compressing the collected pvc-inspector data")
 

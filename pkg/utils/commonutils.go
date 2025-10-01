@@ -35,8 +35,9 @@ type MustGatherFlags struct {
 	OperatorNamespace     string // namespace where the MQ Operator is running
 	KubeconfigPath        string // path to the kubeconfig file
 	OutputDir             string // directory where the must-gathers will be stored
-	NoTar                 bool   // whether to tar+zip the must-gather output
-	NoExec                bool   //whether to collect the pod-exec must-gathers like runmqras etc.
+	SkipTar               bool   // whether to tar+zip the must-gather output
+	SkipExec              bool   // whether to collect the pod-exec must-gathers like runmqras etc.
+	Help                  bool   // Flag to display help message
 }
 
 type PVCInspectorFlags struct {
@@ -47,7 +48,8 @@ type PVCInspectorFlags struct {
 	OutputDir             string // directory where the collected pvc-inspector data will be stored
 	Cleanup               bool   // whether to cleanup the pvc-pods at the end of the tool run
 	DryRun                bool   // whether to create the pvc-pods
-	NoTar                 bool   // whether to tar+zip the pvc-inspector output
+	SkipTar               bool   // whether to tar+zip the pvc-inspector output
+	Help                  bool   // Flag to display help message
 	Runmqras              bool   // whether to run the runmqras command automatically
 }
 
