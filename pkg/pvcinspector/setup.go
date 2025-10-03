@@ -287,14 +287,14 @@ func collectPVCPodYaml(pod *corev1.Pod, outputDir string) error {
 
 func createConfigMap(client kubernetes.Interface, namespace string, logger *slog.Logger) error {
 
-	isConfigMapExists := true
+	configMapExists := true
 
 	var configMap *corev1.ConfigMap
 	var err error
 
 	configMap, err = client.CoreV1().ConfigMaps(namespace).Get(context.TODO(), utils.CustomISAConfigMap, metav1.GetOptions{})
 	if errors.IsNotFound(err) || configMap == nil {
-		isConfigMapExists = false
+		configMapExists = false
 	} else if err != nil {
 		logger.Error(fmt.Sprintf("Error checking %s configmap in %s namespace", utils.CustomISAConfigMap, namespace))
 		return err
@@ -307,7 +307,7 @@ func createConfigMap(client kubernetes.Interface, namespace string, logger *slog
 		return fmt.Errorf("error creating ConfigMap in namespace %s: ConfigMap %s already exists. Please delete the %s ConfigMap and re-run the pvc-inspector tool", namespace, utils.CustomISAConfigMap, utils.CustomISAConfigMap)
 	}
 
-	if isConfigMapExists {
+	if configMapExists {
 		// update the existing ConfigMap
 		logger.Info(fmt.Sprintf("ConfigMap %s found in %s namespace, updating the ConfigMap", configMap.ObjectMeta.Name, namespace))
 
