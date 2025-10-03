@@ -1,4 +1,4 @@
-# IBM MQ Inspector
+# IBM MQ container inspector
 
 ## Overview
 
@@ -8,9 +8,11 @@ This repository currently includes the MQ MustGather tool, which simplifies the 
 
 Additional tools may be added over time to support broader inspection and interaction use cases.
 
+The full source code is available at https://github.com/ibm-messaging/mq-container-inspector
+
 ## Build
 
-To build the MQ Inspector tools, simply run:
+To build the MQ container inspector tools, simply run:
 
 `go build`
 
@@ -20,7 +22,7 @@ This will produce a single binary containing all available CLI tools. No additio
 
 After building the binary, you can run the MustGather tool with the following command:
 
-`./mq-inspector mustgather --qm-name <queue manager name> --qm-namespace <queue manager namespace>`
+`./mq-container-inspector mustgather --qm-name <queue-manager-name> --qm-namespace <queue-manager-namespace>`
 
 This command collects diagnostic data from the specified queue manager running in a Kubernetes or OpenShift environment.
 
@@ -30,17 +32,17 @@ By default, the output is saved inside a `Must_Gather_<timestamp>` folder in the
 
 After building the binary, you can run the PVC tool with the following command:
 
-`./mq-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <namespace>`
+`./mq-container-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <queue-manager-namespace>`
 
 This command creates pods attached to the queue manager PVCs for inspecting the PVCs in a Kubernetes or OpenShift environment.
 
 To delete the pvctool pods, run the same command with the --cleanup flag:
 
-`./mq-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <namespace> --cleanup`
+`./mq-container-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <namespace> --cleanup`
 
 ## Issues and contributions
 
-For issues relating specifically to the MQ Inspector tool, please use the [GitHub issue tracker](https://github.com/ibm-messaging/mq-inspector/issues). Pull requests are not currently accepted.
+For issues relating specifically to the MQ container inspector tool, please use the [GitHub issue tracker](https://github.com/ibm-messaging/mq-container-inspector/issues). Pull requests are not currently accepted.
 
 ## License
 

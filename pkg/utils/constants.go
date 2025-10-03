@@ -133,10 +133,10 @@ const PodDeletionWatcher = "PodDeletion"
 
 const PodRunningStatus = "Running"
 
-const CustomISAConfigMap = "mq-inspector-runmqras-config"
+const CustomISAConfigMap = "mq-container-inspector-runmqras-config"
 
 const CustomISAFilePath = "./pkg/runmqras/custom-isa.xml"
 
 const CustomISAFileName = "custom-isa.xml"
 
-const MQInspectorManagedLabel = "app.kubernetes.io/managed-by:mq-inspector"
+const MQInspectorManagedLabel = "app.kubernetes.io/managed-by:mq-container-inspector"

@@ -59,25 +59,24 @@ func Execute() {
 func printHelp() {
 
 	fmt.Println(`
-mq-inspector: A CLI tool for inspecting MQ resources
+mq-container-inspector: A CLI tool for inspecting MQ resources
 
 Usage:
-  mq-inspector <command> [flags]
+  mq-container-inspector <command> [flags]
 
 Available Commands:
   mustgather     Collect diagnostic data for a queue manager
   pvctool        Inspect PVCs associated with a queue manager
-  version        Print the version of mq-inspector
+  version        Print the version of mq-container-inspector
 
 Examples:
-  mq-inspector mustgather --qm-name <queue-manager-name> --qm-namespace <namespace>
-  mq-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <namespace>
+  mq-container-inspector mustgather --qm-name <queue-manager-name> --qm-namespace <namespace>
+  mq-container-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <namespace>
 
-Use "mq-inspector <command> --help" for more information about a command.`)
+Use "mq-container-inspector <command> --help" for more information about a command.`)
 
 }
 
-// TODO: get version from build flag so we don't need to keep updating this function
 func printVersion() {
-	fmt.Println("mq-inspector version v1.0.0")
+	fmt.Println("mq-container-inspector version: 1.0.0")
 }
