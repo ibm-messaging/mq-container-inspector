@@ -83,28 +83,34 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 		if err != nil {
 			return nil, err
 		}
+		var createdPod *corev1.Pod
 
 		if !flags.DryRun {
-
 			// create the pvc pod
-			pvcPod, err = coreClient.CoreV1().Pods(pvcPod.ObjectMeta.Namespace).Create(context.TODO(), pvcPod, metav1.CreateOptions{})
+			createdPod, err = coreClient.CoreV1().Pods(pvcPod.ObjectMeta.Namespace).Create(context.TODO(), pvcPod, metav1.CreateOptions{})
 			if err != nil {
-				return nil, err
+				if errors.IsAlreadyExists(err) {
+					fmt.Printf("Pod %v already exists, using existing pod for pvctool\n", pvcPod.ObjectMeta.Name)
+					logger.Info(fmt.Sprintf("Pod %v already exists, using existing pod for pvctool\n", pvcPod.ObjectMeta.Name))
+					createdPod, err = pods.GetPodByName(coreClient, pvcPod.ObjectMeta.Name, pvcPod.ObjectMeta.Namespace)
+					if err != nil {
+						return nil, err
+					}
+				} else {
+					return nil, err
+				}
+			} else {
+				// watch for the pod creation and when pod has been created/failed then log the result
+				if err := pods.SetupPodWatcher(coreClient, createdPod, flags.QueueManagerNamespace, utils.PodCreationWatcher, logger); err != nil {
+					logger.Error(fmt.Sprintf("Error while watching pvc-inspector pod creation: %v", err))
+				}
+				logger.Info(fmt.Sprintf("Creating PVC pod %s for %s pod in %s namespace", createdPod.ObjectMeta.Name, pod.ObjectMeta.Name, createdPod.ObjectMeta.Namespace))
 			}
-
-			// watch for the pod creation and when pod has been created/failed then log the result
-			if err := pods.SetupPodWatcher(coreClient, pvcPod, flags.QueueManagerNamespace, utils.PodCreationWatcher, logger); err != nil {
-				logger.Error(fmt.Sprintf("Error while watching pvc-inspector pod creation: %v", err))
-			}
-
-			pvcPods = append(pvcPods, *pvcPod)
-
-			logger.Info(fmt.Sprintf("Creating PVC pod %s for %s pod in %s namespace", pvcPod.ObjectMeta.Name, pod.ObjectMeta.Name, pvcPod.ObjectMeta.Namespace))
-
+			pvcPods = append(pvcPods, *createdPod)
 		}
 
 		// collect the pvc-pod yaml
-		if err := collectPVCPodYaml(pvcPod, pvcPodYamlDir); err != nil {
+		if err := collectPVCPodYaml(createdPod, pvcPodYamlDir); err != nil {
 			logger.Error(fmt.Sprintf("Error collecting pvc-pod yaml: %v", err))
 		}
 
@@ -206,16 +212,13 @@ func createPVCPodStructure(client kubernetes.Interface, pod corev1.Pod, worker s
 
 	pvcPod := generatePVCPodSkeleton(pod, worker, pvcPodVolumeMounts, pvcPodVolumes)
 
-	if flags.Runmqras {
-
-		// create a ConfigMap with the file-data, if configmap already exists then update the ConfigMap
-		if err := createConfigMap(client, flags.QueueManagerNamespace, logger); err != nil {
-			return nil, err
-		}
-
-		// update the volumes and volume-mount to mount the custom-isa.xml file
-		pvcPod = mountFileOnPod(pvcPod)
+	// create a ConfigMap with the file-data, if configmap already exists then update the ConfigMap
+	if err := createConfigMap(client, flags.QueueManagerNamespace, logger); err != nil {
+		return nil, err
 	}
+
+	// update the volumes and volume-mount to mount the custom-isa.xml file
+	pvcPod = mountFileOnPod(pvcPod)
 
 	return pvcPod, nil
 }

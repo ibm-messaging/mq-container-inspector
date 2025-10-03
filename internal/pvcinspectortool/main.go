@@ -85,10 +85,8 @@ func PVCInspectorTool(cfg *rest.Config, flags utils.PVCInspectorFlags) error {
 		logger.Error(fmt.Sprintf("Error setting up PVC pods: %v", err))
 		return err
 	}
-
 	// verify pvc-pods exist, will be nil with no error when dry-run is enabled
 	if pvcPods != nil {
-
 		logger.Info(fmt.Sprintf("%d pvc-inspector pods created in %s namespace", len(pvcPods), flags.QueueManagerNamespace))
 
 		if flags.Runmqras {
