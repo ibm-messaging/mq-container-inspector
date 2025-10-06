@@ -135,8 +135,6 @@ const PodRunningStatus = "Running"
 
 const CustomISAConfigMap = "mq-container-inspector-runmqras-config"
 
-const CustomISAFilePath = "./pkg/runmqras/custom-isa.xml"
-
 const CustomISAFileName = "custom-isa.xml"
 
 const MQInspectorManagedLabel = "app.kubernetes.io/managed-by:mq-container-inspector"

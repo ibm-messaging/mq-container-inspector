@@ -18,9 +18,9 @@ package pvcinspector
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -34,6 +34,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
+
+// Embed the custom runmqras isa file in the binary
+//
+//go:embed custom-isa.xml
+var customISA embed.FS
 
 func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags, qmPod *corev1.Pod, logger *slog.Logger) ([]corev1.Pod, error) {
 
@@ -347,7 +352,7 @@ func createConfigMap(client kubernetes.Interface, namespace string, logger *slog
 
 func getConfigMap(configMap *corev1.ConfigMap, namespace string) (*corev1.ConfigMap, error) {
 
-	fileData, err := getFileData()
+	fileData, err := loadCustomISA()
 	if err != nil {
 		return nil, err
 	}
@@ -366,7 +371,7 @@ func getConfigMap(configMap *corev1.ConfigMap, namespace string) (*corev1.Config
 				Name:      utils.CustomISAConfigMap,
 				Namespace: namespace,
 				Labels: map[string]string{
-					"app.kubernetes.io/managed-by": "mq-inspector",
+					"app.kubernetes.io/managed-by": "mq-container-inspector",
 				},
 			},
 			Data: map[string]string{
@@ -379,15 +384,12 @@ func getConfigMap(configMap *corev1.ConfigMap, namespace string) (*corev1.Config
 
 }
 
-func getFileData() (string, error) {
-
-	data, err := os.ReadFile(utils.CustomISAFilePath)
+func loadCustomISA() (string, error) {
+	data, err := customISA.ReadFile(utils.CustomISAFileName)
 	if err != nil {
-		return "", fmt.Errorf("error reading the custom isa file data: %v", err)
+		return "", fmt.Errorf("failed to read embedded custom-isa.xml: %v", err)
 	}
-
 	return string(data), nil
-
 }
 
 func mountFileOnPod(pod *corev1.Pod) *corev1.Pod {
