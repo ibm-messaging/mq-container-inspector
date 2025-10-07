@@ -38,6 +38,9 @@ import (
 func ValidateNamespace(coreClient kubernetes.Interface, namespace string) error {
 	namespaceExists, err := ns.DoesNamespacesExist(coreClient, namespace)
 	if err != nil {
+		if errors.IsUnauthorized(err) {
+			return fmt.Errorf("unauthorized access to namespace: %v. Please ensure you are logged in and have the necessary access rights for the namespace", namespace)
+		}
 		return fmt.Errorf("error while checking if the namespace %v exists: %v", namespace, err)
 	} else if !namespaceExists {
 		return fmt.Errorf("provided queue manager namespace %v was not found on the currently logged-in cluster", namespace)
