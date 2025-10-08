@@ -18,7 +18,7 @@ cover.html
 build/
 
 # Go build binary
-mq-inspector
+mq-container-inspector
 
 # Default Must gather outputs folders
 Must_Gather_*

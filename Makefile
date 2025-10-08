@@ -17,7 +17,7 @@ include config.env
 ####################################
 # Variables used
 ####################################
-BINARY=mq-inspector
+BINARY=mq-container-inspector
 PLATFORM_TAG=${OS}-${ARCH}
 # Contruct the name of binary based on os & architecture
 BINARY_FULL_NAME=${MQ_INSPECTOR_VERSION}_${BINARY}_${PLATFORM_TAG}
