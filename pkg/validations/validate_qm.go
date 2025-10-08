@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"slices"
+	"sort"
 	"text/tabwriter"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/cr"
@@ -65,7 +65,7 @@ func ValidatePodName(coreClient kubernetes.Interface, podName, namespace string)
 		} else {
 			printQueueManagerPodNames(podNames)
 		}
-		return nil, fmt.Errorf("re-run the must-gather tool with the correct queue manager pod name")
+		return nil, fmt.Errorf("re-run the must-gather tool with a valid queue manager pod name")
 	} else if err != nil {
 		return nil, fmt.Errorf("error while checking instance label for pod %s: %v", podName, err)
 	}
@@ -82,7 +82,7 @@ func ValidatePodName(coreClient kubernetes.Interface, podName, namespace string)
 		} else {
 			printQueueManagerPodNames(podNames)
 		}
-		return pod, fmt.Errorf("re-run the must-gather tool with the correct queue manager pod name")
+		return pod, fmt.Errorf("re-run the must-gather tool with a valid queue manager pod name")
 	}
 
 	return pod, nil
@@ -144,36 +144,44 @@ func isQueueManagerPod(pod *corev1.Pod) bool {
 
 }
 
-func listAllQueueManagerPods(coreClient kubernetes.Interface, namespace string) ([]string, error) {
+func listAllQueueManagerPods(coreClient kubernetes.Interface, namespace string) (map[string]string, error) {
 
 	podList, err := coreClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	var queueManagerPodNames []string
+	queueManagerPodNames := make(map[string]string)
 
 	for _, pod := range podList.Items {
 		for _, container := range pod.Spec.Containers {
 			for _, env := range container.Env {
 				if env.Name == utils.QueueManagerEnvName && env.Value != "" {
-					queueManagerPodNames = append(queueManagerPodNames, pod.Name)
+					queueManagerPodNames[pod.Name] = string(pod.Status.Phase)
 				}
 			}
 		}
 	}
 
-	return slices.Compact(queueManagerPodNames), nil
+	return queueManagerPodNames, nil
 
 }
 
-func printQueueManagerPodNames(queueManagerPodNames []string) {
+func printQueueManagerPodNames(podPhaseMap map[string]string) {
 	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
-	fmt.Fprintln(writer, "NAME")
+	// Create a sorted array of podPhaseMap keys
+	podNames := make([]string, 0, len(podPhaseMap))
+	for k := range podPhaseMap {
+		podNames = append(podNames, k)
+	}
+	sort.Strings(podNames)
 
-	for _, podName := range queueManagerPodNames {
-		fmt.Fprintf(writer, "%s\n", podName)
+	// Print header
+	fmt.Fprintln(writer, "NAME\tPHASE")
+	// Print the pods and phases in alphabetical order
+	for _, podName := range podNames {
+		fmt.Fprintf(writer, "%s\t%s\n", podName, podPhaseMap[podName])
 	}
 
 	writer.Flush()
