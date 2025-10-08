@@ -21,9 +21,9 @@ import (
 	"io"
 	"log/slog"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/container"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/container"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

@@ -20,7 +20,7 @@ import (
 
 	routeV1 "github.com/openshift/api/route/v1"
 	routefake "github.com/openshift/client-go/route/clientset/versioned/fake"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"

@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

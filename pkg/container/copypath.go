@@ -25,8 +25,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 )

@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/cmd/mustgather"
-	"github.ibm.com/mq-cloudpak/mq-inspector/cmd/pvcinspectortool"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/cmd/mustgather"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/cmd/pvcinspectortool"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 )
 
 func Execute() {

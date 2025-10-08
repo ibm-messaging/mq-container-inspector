@@ -20,11 +20,11 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/csv"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/deployment"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/namespace"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/csv"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/deployment"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/namespace"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )

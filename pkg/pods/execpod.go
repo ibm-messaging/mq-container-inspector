@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/kubeclient"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"

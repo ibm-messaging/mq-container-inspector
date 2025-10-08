@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	networkingv1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/yaml"
 )

@@ -16,7 +16,7 @@ limitations under the License.
 package main
 
 import (
-	"github.ibm.com/mq-cloudpak/mq-inspector/cmd"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/cmd"
 )
 
 func main() {

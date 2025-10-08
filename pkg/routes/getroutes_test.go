@@ -22,7 +22,7 @@ import (
 
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/openshift/client-go/route/clientset/versioned/fake"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/test"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -20,8 +20,8 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/cr"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/cr"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/dynamic"
 )

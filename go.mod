@@ -1,4 +1,4 @@
-module github.ibm.com/mq-cloudpak/mq-inspector
+module github.ibm.com/mq-cloudpak/mq-container-inspector
 
 go 1.23.0
 

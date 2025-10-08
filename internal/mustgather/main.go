@@ -22,10 +22,10 @@ import (
 	"strings"
 	"time"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/tarzip"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/validations"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/kubeclient"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/tarzip"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/validations"
 	"k8s.io/client-go/rest"
 )
 
@@ -296,7 +296,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if len(failedPodNames) > 0 {
 		logger.Info(fmt.Sprintf("Must-Gather tool run detected %d failing pods: [%s]", len(failedPodNames), strings.Join(failedPodNames, ", ")))
 
-		pvcInspectorCommand := fmt.Sprintf("./mq-inspector pvctool --pod-name %s --qm-namespace %s", failedPodNames[0], flags.QueueManagerNamespace)
+		pvcInspectorCommand := fmt.Sprintf("./mq-container-inspector pvctool --pod-name %s --qm-namespace %s", failedPodNames[0], flags.QueueManagerNamespace)
 
 		fmt.Printf(`Must-Gather tool run detected %d failing pods.
 

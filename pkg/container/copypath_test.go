@@ -24,7 +24,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	"k8s.io/client-go/rest"
 )
 

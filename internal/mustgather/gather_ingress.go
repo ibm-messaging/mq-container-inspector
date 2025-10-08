@@ -21,9 +21,9 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/ingress"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/service"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/ingress"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/service"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/client-go/kubernetes"

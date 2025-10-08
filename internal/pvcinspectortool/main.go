@@ -21,11 +21,11 @@ import (
 	"log/slog"
 	"os"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/kubeclient"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pvcinspector"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/tarzip"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/validations"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/kubeclient"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pvcinspector"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/tarzip"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/validations"
 	"k8s.io/client-go/rest"
 )
 

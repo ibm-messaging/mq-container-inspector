@@ -24,10 +24,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/container"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/pods"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/runmqras"
-	"github.ibm.com/mq-cloudpak/mq-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/container"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/runmqras"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -163,7 +163,7 @@ func DeletePVCPods(coreClient kubernetes.Interface, pvcPods []corev1.Pod, flags 
 			return
 		}
 
-		// delete the ConfigMap only if it is managed by mq-inspector
+		// delete the ConfigMap only if it is managed by mq-container-inspector
 		if managedByMQInspector(configMap) {
 
 			if err := coreClient.CoreV1().ConfigMaps(flags.QueueManagerNamespace).Delete(context.TODO(), utils.CustomISAConfigMap, metav1.DeleteOptions{}); err != nil {
