@@ -152,26 +152,28 @@ func DeletePVCPods(coreClient kubernetes.Interface, pvcPods []corev1.Pod, flags 
 
 	}
 
-	if flags.Runmqras {
+	// Delete the custom ConfigMap created to be passed as input-file in the runmqras command
+	logger.Info(fmt.Sprintf("Deleting %s ConfigMap in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
 
-		// Delete the custom ConfigMap created to be passed as input-file in the runmqras command
-		logger.Info(fmt.Sprintf("Deleting %s ConfigMap in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
+	configMap, err := coreClient.CoreV1().ConfigMaps(flags.QueueManagerNamespace).Get(context.TODO(), utils.CustomISAConfigMap, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		logger.Info(fmt.Sprintf("ConfigMap %s not found in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
+	} else if err != nil {
+		logger.Error(fmt.Sprintf("Error checking %s configmap in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
+		return
+	}
 
-		configMap, err := coreClient.CoreV1().ConfigMaps(flags.QueueManagerNamespace).Get(context.TODO(), utils.CustomISAConfigMap, metav1.GetOptions{})
-		if err != nil {
-			logger.Error(fmt.Sprintf("Error checking %s configmap in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
-			return
-		}
+	// delete the ConfigMap only if it is managed by mq-container-inspector
+	if managedByMQInspector(configMap) {
 
-		// delete the ConfigMap only if it is managed by mq-container-inspector
-		if managedByMQInspector(configMap) {
-
-			if err := coreClient.CoreV1().ConfigMaps(flags.QueueManagerNamespace).Delete(context.TODO(), utils.CustomISAConfigMap, metav1.DeleteOptions{}); err != nil {
-				logger.Error(fmt.Sprintf("Error deleting %s ConfigMap in %s namespace: %v", utils.CustomISAConfigMap, flags.QueueManagerNamespace, err))
-			}
+		err := coreClient.CoreV1().ConfigMaps(flags.QueueManagerNamespace).Delete(context.TODO(), utils.CustomISAConfigMap, metav1.DeleteOptions{})
+		if errors.IsNotFound(err) {
+			logger.Info(fmt.Sprintf("ConfigMap %s not found in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
+		} else if err != nil {
+			logger.Error(fmt.Sprintf("Error deleting %s ConfigMap in %s namespace: %v", utils.CustomISAConfigMap, flags.QueueManagerNamespace, err))
+		} else {
 			logger.Info(fmt.Sprintf("Successfully deleted %s ConfigMap in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
 		}
-
 	}
 
 }
