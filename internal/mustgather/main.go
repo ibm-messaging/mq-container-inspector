@@ -31,20 +31,6 @@ import (
 
 func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 
-	// initialize logger
-	logFile, err := utils.InitializeLogFile(flags.OutputDir, utils.MustGatherLogFileName)
-	if err != nil {
-		return err
-	}
-	defer func(f *os.File) {
-		if err := f.Close(); err != nil {
-			fmt.Printf("error closing logFile %v", err)
-		}
-	}(logFile)
-
-	handler := slog.NewTextHandler(logFile, nil)
-	logger := slog.New(handler)
-
 	// build the required clients
 	coreClient, err := kubeclient.BuildKubernetesClientFromConfig(cfg)
 	if err != nil {
@@ -82,6 +68,28 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		}
 		qmPod = pod
 	}
+
+	// If OutputDir doesnot exist create the directory
+	directoryExist := utils.CheckIfDirectoryExist(flags.OutputDir)
+	if !directoryExist {
+		if err := utils.CreateDirectory(flags.OutputDir, 0775); err != nil {
+			return err
+		}
+	}
+
+	// initialize logger
+	logFile, err := utils.InitializeLogFile(flags.OutputDir, utils.MustGatherLogFileName)
+	if err != nil {
+		return err
+	}
+	defer func(f *os.File) {
+		if err := f.Close(); err != nil {
+			fmt.Printf("error closing logFile %v", err)
+		}
+	}(logFile)
+
+	handler := slog.NewTextHandler(logFile, nil)
+	logger := slog.New(handler)
 
 	logger.Info("---- Starting Must-Gather tool ----")
 
