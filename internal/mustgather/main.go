@@ -304,7 +304,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if len(failedPodNames) > 0 {
 		logger.Info(fmt.Sprintf("Must-Gather tool run detected %d failing pods: [%s]", len(failedPodNames), strings.Join(failedPodNames, ", ")))
 
-		pvcInspectorCommand := fmt.Sprintf("./mq-container-inspector pvctool --pod-name %s --qm-namespace %s", failedPodNames[0], flags.QueueManagerNamespace)
+		pvcInspectorCommand := fmt.Sprintf("mq-container-inspector pvctool --pod-name %s --qm-namespace %s", failedPodNames[0], flags.QueueManagerNamespace)
 
 		fmt.Printf(`Must-Gather tool run detected %d failing pods.
 
