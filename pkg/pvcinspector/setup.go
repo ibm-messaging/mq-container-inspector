@@ -71,7 +71,8 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 	}
 
 	if flags.DryRun {
-		logger.Info("Dry-run enabled: pvc-inspector pods will not be created; only the pod YAMLs will be collected")
+		logger.Info("Dry-run enabled: pvc-inspector pods will not be created, only the pod YAMLs will be collected")
+		fmt.Println("Dry-run enabled: pvc-inspector pods will not be created, only the pod YAMLs will be collected")
 	} else {
 		fmt.Println("----- Creating PVC-inspector pods -----")
 	}
@@ -112,6 +113,8 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 				logger.Info(fmt.Sprintf("Creating PVC pod %s for %s pod in %s namespace", createdPod.ObjectMeta.Name, pod.ObjectMeta.Name, createdPod.ObjectMeta.Namespace))
 			}
 			pvcPods = append(pvcPods, *createdPod)
+		} else {
+			createdPod = pvcPod
 		}
 
 		// collect the pvc-pod yaml
