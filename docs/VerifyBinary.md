@@ -11,11 +11,11 @@ Run one of the following commands to download the MQ public key in a file named 
 
 Retrieve the latest public keys (example with wget):
 
-`wget https://raw.githubusercontent.com/ibm-messaging/mq-container/refs/heads/main/certificates/mq-public.gpg`
+`wget https://raw.githubusercontent.com/ibm-messaging/mq-container-inspector/refs/heads/main/certificates/mq-public.gpg`
 
 Retrieve the latest public keys (example with curl):
 
-`curl https://raw.githubusercontent.com/ibm-messaging/mq-container/refs/heads/main/certificates/mq-public.gpg -o mq-public.gpg`
+`curl https://raw.githubusercontent.com/ibm-messaging/mq-container-inspector/refs/heads/main/certificates/mq-public.gpg -o mq-public.gpg`
 
 2. Import the MQ container public key to your machine
 
@@ -41,6 +41,8 @@ If you do not already have a gpg private key, Run the command below to generate 
 ```
 gpg --generate-key
 ```
+
+You will be asked to provide a `Real name` and `Email address` to identify the owner of the key.
 
 4. Sign the MQ container public key
 
