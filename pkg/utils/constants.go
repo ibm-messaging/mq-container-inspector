@@ -138,3 +138,5 @@ const CustomISAConfigMap = "mq-container-inspector-runmqras-config"
 const CustomISAFileName = "custom-isa.xml"
 
 const MQInspectorManagedLabel = "app.kubernetes.io/managed-by:mq-container-inspector"
+
+const QueueManagerStatusPending = "Pending"

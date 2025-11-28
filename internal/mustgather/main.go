@@ -95,7 +95,17 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 
 	mustGatherToolStartTime := time.Now()
 
+	// If the qmPod is nil, it indicates that the queue-manager is not in running state
+	isQueueManagerPending := (qmPod == nil)
+
 	if flags.QueueManagerName != "" {
+
+		// if queue-manager not in running state then, continue collecting the miust-gather details
+		if isQueueManagerPending {
+			logger.Info(fmt.Sprintf("No queue manager pods exist for QueueManager CR %s in namespace %s", flags.QueueManagerName, flags.QueueManagerNamespace))
+			fmt.Printf("No queue manager pods exist for QueueManager CR %s in namespace %s.\n", flags.QueueManagerName, flags.QueueManagerNamespace)
+		}
+
 		// collect queue manager cr must-gathers
 		logger.Info("---- Collecting queue manager details ----")
 		fmt.Print("Collecting queue manager details ...")
@@ -176,7 +186,6 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		}
 		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 		logger.Info("---- StatefulSet details collected ----")
-
 	case utils.KindReplicaSet:
 		logger.Info(fmt.Sprintf("Found %s as the controller owner", podOwner))
 		// collect Deployment must-gathers
@@ -253,8 +262,8 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		logger.Info("---- CP4I details collected ----")
 	}
 
-	// if skip-exec is disabled then collect the web-console and runmqras logs
-	if !flags.SkipExec {
+	// if skip-exec is disabled, and the queue-manager is not pending then collect the web-console and runmqras logs
+	if !flags.SkipExec && !isQueueManagerPending {
 		// collect web-console logs
 		logger.Info("---- Collecting web-console details ----")
 		fmt.Print("Collecting web-console details...")

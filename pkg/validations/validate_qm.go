@@ -101,6 +101,10 @@ func ValidateQueueManagerName(coreClient kubernetes.Interface, dynamicClient dyn
 	if err != nil {
 		return nil, fmt.Errorf("error while fetching pods with selector %s in namespace %s", labelSelector, namespace)
 	} else if podList == nil {
+		// check if the queue-manager with qmName exists
+		if queueManagerCRExists(dynamicClient, qmName, namespace) {
+			return nil, nil
+		}
 		// display all the QMGR pods in the namespace
 		fmt.Printf("Queue manager '%s' not found in the namespace '%s'\n", qmName, namespace)
 		if err := listAllQueueManagerCRs(dynamicClient, qmName, namespace); err != nil {
@@ -205,5 +209,15 @@ func printQueueManagerCRs(queueManagerList []unstructured.Unstructured) {
 	}
 
 	writer.Flush()
+
+}
+
+func queueManagerCRExists(dynamicClient dynamic.Interface, qmName, namespace string) bool {
+
+	if _, err := cr.GetQueueManagerCrDetailsByName(dynamicClient, qmName, namespace); err != nil {
+		return false
+	}
+
+	return true
 
 }

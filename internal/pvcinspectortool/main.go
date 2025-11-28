@@ -67,6 +67,12 @@ func PVCInspectorTool(cfg *rest.Config, flags utils.PVCInspectorFlags) error {
 		return err
 	}
 
+	// if queue-manager is not in running state, then pvc-data cannot be collected
+	if qmPod == nil {
+		logger.Info(fmt.Sprintf("Unable to run pvc-tool, because no queue manager pods exist for QueueManager CR %s in namespace %s.", flags.QueueManagerName, flags.QueueManagerNamespace))
+		return fmt.Errorf("unable to run pvc-tool, because no queue manager pods exist for QueueManager CR %s in namespace %s", flags.QueueManagerName, flags.QueueManagerNamespace)
+	}
+
 	// validate the --pod-name flag
 	if pod, err := validations.ValidatePodName(coreClient, flags.PodName, flags.QueueManagerNamespace); err != nil {
 		return err
