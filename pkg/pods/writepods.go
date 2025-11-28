@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"text/tabwriter"
 	"time"
@@ -107,7 +108,7 @@ func WritePodYamlsToFile(podList []corev1.Pod, fileNameFormat, outputDir string)
 //   - podLogsMap:     the map of pod names to their PodLogs structs, whose logs will be written.
 //   - fileNameFormat: the format string used to name each file; must contain two "%s" verbs—first for the pod name, second for "current" or "previous" based on log type.
 //   - outputDir:      the directory in which the log files will be created.
-func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, outputDir string) error {
+func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, outputDir string, logger *slog.Logger) error {
 
 	for podName, podLog := range podLogsMap {
 		var fileName string
@@ -122,12 +123,19 @@ func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, out
 
 			previousPodLogsStream, err := podLog.PreviousPodLogsRequest.Stream(context.TODO())
 			if err != nil {
-				return fmt.Errorf("error getting pod %s, previous log stream: %v", podName, err)
-			}
-
-			if _, err := io.Copy(prevLogFile, previousPodLogsStream); err != nil {
+				logger.Info(fmt.Sprintf("Error getting pod %s, previous log stream: %v", podName, err))
 				prevLogFile.Close()
-				return fmt.Errorf("error while writing %s pod previous logs to file %s: %v", podName, fileName, err)
+
+				// remove the empty file
+				if err := utils.RemoveFile(prevLogFile); err != nil {
+					logger.Info(fmt.Sprintf("Error removing %s file: %v", prevLogFile.Name(), err))
+				}
+			} else {
+
+				if _, err := io.Copy(prevLogFile, previousPodLogsStream); err != nil {
+					prevLogFile.Close()
+					return fmt.Errorf("error while writing %s pod previous logs to file %s: %v", podName, fileName, err)
+				}
 			}
 
 			prevLogFile.Close()
@@ -143,12 +151,19 @@ func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, out
 
 		currentPodLogsStream, err := podLog.CurrentPodLogsRequest.Stream(context.TODO())
 		if err != nil {
-			return fmt.Errorf("error getting pod %s, current log stream: %v", podName, err)
-		}
-
-		if _, err := io.Copy(curLogFile, currentPodLogsStream); err != nil {
+			logger.Info(fmt.Sprintf("error getting pod %s, current log stream: %v", podName, err))
 			curLogFile.Close()
-			return fmt.Errorf("error while writing %s pod current logs to file %s: %v", podName, fileName, err)
+
+			// remove the empty file
+			if err := utils.RemoveFile(curLogFile); err != nil {
+				logger.Info(fmt.Sprintf("Error removing %s file: %v", curLogFile.Name(), err))
+			}
+		} else {
+
+			if _, err := io.Copy(curLogFile, currentPodLogsStream); err != nil {
+				curLogFile.Close()
+				return fmt.Errorf("error while writing %s pod current logs to file %s: %v", podName, fileName, err)
+			}
 		}
 
 		curLogFile.Close()

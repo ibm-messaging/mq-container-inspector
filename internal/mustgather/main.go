@@ -100,7 +100,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 
 	if flags.QueueManagerName != "" {
 
-		// if queue-manager not in running state then, continue collecting the miust-gather details
+		// if queue-manager not in running state then, continue collecting the must-gather details
 		if isQueueManagerPending {
 			logger.Info(fmt.Sprintf("No queue manager pods exist for QueueManager CR %s in namespace %s", flags.QueueManagerName, flags.QueueManagerNamespace))
 			fmt.Printf("No queue manager pods exist for QueueManager CR %s in namespace %s.\n", flags.QueueManagerName, flags.QueueManagerNamespace)
@@ -241,7 +241,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if flags.QueueManagerName != "" {
 		// collect MQ operator must-gathers
 		logger.Info("---- Collecting mq-operator details(This may take time) ----")
-		fmt.Print("Collecting mq-operator details...")
+		fmt.Print("Collecting mq-operator details(This may take time)...")
 		mustGatherStartTime = time.Now()
 		err = gatherMQOperatorToFiles(coreClient, dynamicClient, flags, logger)
 		if err != nil {
@@ -265,8 +265,8 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	// if skip-exec is disabled, and the queue-manager is not pending then collect the web-console and runmqras logs
 	if !flags.SkipExec && !isQueueManagerPending {
 		// collect web-console logs
-		logger.Info("---- Collecting web-console details ----")
-		fmt.Print("Collecting web-console details...")
+		logger.Info("---- Collecting web-console details(This may take time) ----")
+		fmt.Print("Collecting web-console details(This may take time)...")
 		mustGatherStartTime = time.Now()
 		err = gatherMQWebConsoleLogsToFiles(cfg, coreClient, flags, logger)
 		if err != nil {

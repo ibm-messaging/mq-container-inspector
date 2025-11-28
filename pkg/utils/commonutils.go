@@ -33,6 +33,7 @@ type MustGatherFlags struct {
 	PodName               string // pod name
 	QueueManagerNamespace string // QueueManager  resource namespace
 	OperatorNamespace     string // namespace where the MQ Operator is running
+	QmContainerName       string // QueueManager container name
 	KubeconfigPath        string // path to the kubeconfig file
 	OutputDir             string // directory where the must-gathers will be stored
 	SkipTar               bool   // whether to tar+zip the must-gather output
@@ -81,6 +82,7 @@ type ExecConfig struct {
 	Namespace        string
 	ContainerName    string
 	Cmd              []string
+	Logger           *slog.Logger
 }
 
 func CheckIfDirectoryExist(dir string) bool {
@@ -208,5 +210,29 @@ func CheckIfPodHasPersistedStorage(pod corev1.Pod) bool {
 	}
 
 	return false
+
+}
+
+func IsQueueManagerPod(pod *corev1.Pod) bool {
+
+	for _, container := range pod.Spec.Containers {
+		for _, env := range container.Env {
+			if env.Name == QueueManagerEnvName && env.Value != "" {
+				return true
+			}
+		}
+	}
+
+	return false
+
+}
+
+func RemoveFile(file *os.File) error {
+
+	if err := os.Remove(file.Name()); err != nil {
+		return err
+	}
+
+	return nil
 
 }

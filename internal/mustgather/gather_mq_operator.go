@@ -88,7 +88,7 @@ func gatherMQOperatorToFiles(coreClient kubernetes.Interface, dynamicClient dyna
 	}
 
 	// write the mq-operator pod logs in their respective log files
-	if err := pods.WritePodLogsToFile(podLogs, mqOperatorPodLogsFileNameFormat, mqOperatorDirectory); err != nil {
+	if err := pods.WritePodLogsToFile(podLogs, mqOperatorPodLogsFileNameFormat, mqOperatorDirectory, logger); err != nil {
 		return err
 	}
 

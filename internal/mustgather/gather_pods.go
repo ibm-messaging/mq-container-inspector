@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"strings"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
@@ -38,6 +39,7 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 	}
 
 	var podList []corev1.Pod
+	var nonQmgrPodNames []string
 	var podLogs map[string]utils.PodLogs
 	var podDescribeLogs map[string]string
 	var podEvents map[string][]corev1.Event
@@ -45,18 +47,23 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 
 	if flags.QueueManagerName != "" {
 
-		podList, podLogs, podDescribeLogs, podEvents, err = getPodDetailsBySelector(client, flags, logger)
+		podList, nonQmgrPodNames, podLogs, podDescribeLogs, podEvents, err = getPodDetailsBySelector(client, flags, logger)
 		if err != nil {
 			return nil, err
 		}
 
 	} else if flags.PodName != "" {
 
-		podList, podLogs, podDescribeLogs, podEvents, err = getPodDetailsByName(client, flags, logger)
+		podList, nonQmgrPodNames, podLogs, podDescribeLogs, podEvents, err = getPodDetailsByName(client, flags, logger)
 		if err != nil {
 			return nil, err
 		}
 
+	}
+
+	// log the non queue-manager pod-names
+	if len(nonQmgrPodNames) > 0 {
+		logger.Info(fmt.Sprintf("Found %d non queue-manager pods: %s", len(nonQmgrPodNames), strings.Join(nonQmgrPodNames, ", ")))
 	}
 
 	// check and collect if we have any failed pods
@@ -81,7 +88,7 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 
 	// write the pods logs to their files
 	podLogsFileNameFormat := "%s-%s-pod-log.txt"
-	if err := pods.WritePodLogsToFile(podLogs, podLogsFileNameFormat, podsDirectory); err != nil {
+	if err := pods.WritePodLogsToFile(podLogs, podLogsFileNameFormat, podsDirectory, logger); err != nil {
 		return nil, err
 	}
 
@@ -110,14 +117,14 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 // for pods in the Kubernetes cluster matching the provided selector.
 // If no resources are found for a given category, the corresponding return value will be nil.
 // Returns an error if the retrieval process fails.
-func getPodDetailsBySelector(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) ([]corev1.Pod, map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
+func getPodDetailsBySelector(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) ([]corev1.Pod, []string, map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
 	podLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 
 	// get pods by selector
 	pods, err := pods.GetPodsBySelector(client, podLabelSelector, flags.QueueManagerNamespace)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error while fetching pods with selector %s: %v", podLabelSelector, err))
-		return nil, nil, nil, nil, fmt.Errorf("error while fetching pods with selector %s: %v", podLabelSelector, err)
+		return nil, nil, nil, nil, nil, fmt.Errorf("error while fetching pods with selector %s: %v", podLabelSelector, err)
 	}
 
 	return getPodDetailsFromPods(client, pods, flags, logger)
@@ -128,36 +135,58 @@ func getPodDetailsBySelector(client kubernetes.Interface, flags utils.MustGather
 // which may exist in multi-instance or native HA configurations, and gathers their details.
 // If no resources are found for a given category, the corresponding return value will be nil.
 // Returns an error if the retrieval process fails.
-func getPodDetailsByName(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) ([]corev1.Pod, map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
+func getPodDetailsByName(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) ([]corev1.Pod, []string, map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
 
 	// fetch the podNames from the matching service
 	pods, err := pods.GetMQReplicaPodsViaService(client, flags.PodName, flags.QueueManagerNamespace)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error while fetching pods with name %s: %v", flags.PodName, err))
-		return nil, nil, nil, nil, fmt.Errorf("error while fetching pods with name %s: %v", flags.PodName, err)
+		return nil, nil, nil, nil, nil, fmt.Errorf("error while fetching pods with name %s: %v", flags.PodName, err)
 	}
 
 	return getPodDetailsFromPods(client, pods, flags, logger)
 }
 
-func getPodDetailsFromPods(client kubernetes.Interface, podList []corev1.Pod, flags utils.MustGatherFlags, logger *slog.Logger) ([]corev1.Pod, map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
+func getPodDetailsFromPods(client kubernetes.Interface, podList []corev1.Pod, flags utils.MustGatherFlags, logger *slog.Logger) ([]corev1.Pod, []string, map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
 
-	logger.Info(fmt.Sprintf("Found %d pods in %s namespace with %s name", len(podList), flags.QueueManagerNamespace, flags.PodName))
+	// filter queue-manager pods from the podList
+	podList, nonQmPodNames := filterQueueManagerPods(podList)
+
+	logger.Info(fmt.Sprintf("Found %d queue-manager pods in %s namespace", len(podList), flags.QueueManagerNamespace))
 
 	// fetch the pod logs
-	podLogs := pods.GetPodLogs(client, podList, flags.QueueManagerNamespace, utils.QmgrContainer)
+	podLogs := pods.GetPodLogs(client, podList, flags.QueueManagerNamespace, flags.QmContainerName)
 
 	// fetch the pod describe logs
 	podDescribeLogs, err := pods.GetPodDescribeLogs(client, podList, flags.QueueManagerNamespace)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("error while fetching pod describe logs with name %s: %v", flags.PodName, err)
+		return nil, nil, nil, nil, nil, fmt.Errorf("error while fetching pod describe logs: %v", err)
 	}
 
 	// fetch the podEvents
 	podEvents, err := pods.GetPodEvents(client, podList, flags.QueueManagerNamespace)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error while fetching pod events with name %s: %v", flags.PodName, err))
+		logger.Error(fmt.Sprintf("error while fetching pod events: %v", err))
 	}
 
-	return podList, podLogs, podDescribeLogs, podEvents, nil
+	return podList, nonQmPodNames, podLogs, podDescribeLogs, podEvents, nil
+}
+
+func filterQueueManagerPods(podList []corev1.Pod) ([]corev1.Pod, []string) {
+
+	var qmPodList []corev1.Pod
+	var nonQmgrPodNames []string
+
+	for _, pod := range podList {
+
+		if !utils.IsQueueManagerPod(&pod) {
+			nonQmgrPodNames = append(nonQmgrPodNames, pod.ObjectMeta.Name)
+		} else {
+			qmPodList = append(qmPodList, pod)
+		}
+
+	}
+
+	return qmPodList, nonQmgrPodNames
+
 }

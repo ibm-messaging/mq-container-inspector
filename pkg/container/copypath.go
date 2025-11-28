@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,6 +39,7 @@ type CopyConfig struct {
 	PodName       string
 	ContainerName string
 	SourcePath    string
+	Logger        *slog.Logger
 }
 
 // Helper function to create a CopyConfig from an ExecConfig
@@ -48,6 +50,7 @@ func NewContainerCopyConfig(srcPath string, execConfig utils.ExecConfig) CopyCon
 		ContainerName: execConfig.ContainerName,
 		PodName:       execConfig.PodName,
 		Namespace:     execConfig.Namespace,
+		Logger:        execConfig.Logger,
 	}
 }
 
@@ -126,7 +129,7 @@ func (t *copyPipe) Read(p []byte) (int, error) {
 			t.start(t.bytesRead + 1)
 			err = nil
 		} else {
-			fmt.Printf("Dropping out copy after %d retries\n", t.retryCount)
+			t.copyConfig.Logger.Info(fmt.Sprintf("Dropping out copy after %d retries\n", t.retryCount))
 		}
 	} else {
 		t.bytesRead += uint64(n)

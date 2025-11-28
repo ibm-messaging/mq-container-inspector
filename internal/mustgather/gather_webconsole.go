@@ -52,7 +52,7 @@ func gatherMQWebConsoleLogsToFiles(cfg *rest.Config, coreClient kubernetes.Inter
 			return err
 		}
 	} else if flags.PodName != "" {
-		
+
 		// Get the queueManager pods from podName
 		podList, err = pods.GetMQReplicaPodsViaService(coreClient, flags.PodName, flags.QueueManagerNamespace)
 		if err != nil {
@@ -68,13 +68,14 @@ func gatherMQWebConsoleLogsToFiles(cfg *rest.Config, coreClient kubernetes.Inter
 			KubeConfig:    cfg,
 			PodName:       pod.Name,
 			Namespace:     pod.Namespace,
-			ContainerName: utils.QmgrContainer,
+			ContainerName: flags.QmContainerName,
+			Logger:        logger,
 		}
 
 		consoleOutputFilePath := filepath.Join(webconsoleDirectory, fmt.Sprintf("web-%s-console.log", copyConfig.PodName))
 
 		if err := container.CopyPathToFile(copyConfig, consoleOutputFilePath, 10); err != nil {
-			logger.Error(fmt.Sprintf("unable to copy console.log for pod %q: %v\n", pod.Name, err))
+			logger.Error(fmt.Sprintf("unable to copy web-%s-console.log for pod %q: %v\n", copyConfig.PodName, pod.ObjectMeta.Name, err))
 		}
 
 		// Copy messages.log from queue manager container to OutputDir
@@ -83,7 +84,8 @@ func gatherMQWebConsoleLogsToFiles(cfg *rest.Config, coreClient kubernetes.Inter
 			KubeConfig:    cfg,
 			PodName:       pod.Name,
 			Namespace:     pod.Namespace,
-			ContainerName: utils.QmgrContainer,
+			ContainerName: flags.QmContainerName,
+			Logger:        logger,
 		}
 
 		messagesOutputFilePath := filepath.Join(webconsoleDirectory, fmt.Sprintf("web-%s-messages.log", copyConfig.PodName))

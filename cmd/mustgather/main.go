@@ -77,6 +77,7 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 	flagSet.StringVar(&flags.PodName, "pod-name", "", "name of a queue manager pod in the target queue manager instance (exactly one of --qm-name or --pod-name are required)")
 	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "namespace where the queue manager is deployed (required)")
 	flagSet.StringVar(&flags.OperatorNamespace, "operator-namespace", "", "namespace where the MQ operator is deployed (default: --qm-namespace)")
+	flagSet.StringVar(&flags.QmContainerName, "qm-container", "", "name of the container running MQ (default: qmgr)")
 	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "path to the kubeconfig file. Ignored when running via mustgather image (default: ~/.kube/config)")
 	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "directory where the must-gather output folder will be created. Ignored when running via mustgather image (default: current working directory)")
 	flagSet.BoolVar(&flags.SkipTar, "skip-tar", false, "skip compressing the must-gather output into a tar.gz file (default: false)")
@@ -113,6 +114,7 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 
 func setDefaultFlags(flags *utils.MustGatherFlags) error {
 
+	// setup the KubeconfigPath
 	if flags.KubeconfigPath == "" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
@@ -121,6 +123,7 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 		flags.KubeconfigPath = filepath.Join(homeDir, ".kube/config")
 	}
 
+	// setup the outputDir
 	if flags.OutputDir == "" {
 		currentWorkingDir, err := os.Getwd()
 		if err != nil {
@@ -133,6 +136,11 @@ func setDefaultFlags(flags *utils.MustGatherFlags) error {
 	timestamp := utils.GetCurrentTimestamp(utils.TimestampFormat)
 	outputDir := filepath.Join(flags.OutputDir, fmt.Sprintf("Must_Gather_%v", timestamp))
 	flags.OutputDir = outputDir
+
+	// setup the QmContainerName
+	if flags.QmContainerName == "" {
+		flags.QmContainerName = utils.QmgrContainer
+	}
 
 	return nil
 

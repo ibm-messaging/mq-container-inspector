@@ -43,7 +43,7 @@ func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, podLi
 	var runmqrasPodExecutorList []container.CopyConfig
 
 	for _, pod := range podList {
-		copyConfig, err := execRunmqras(cfg, pod, useCustomFile, baseContainer)
+		copyConfig, err := execRunmqras(cfg, pod, useCustomFile, baseContainer, logger)
 		if err != nil {
 			// log the error, and continue trying to run the runmqras for other pods in podList
 			logger.Error(fmt.Sprintf("error while executing runmqras inside pod %s: %v", pod.Name, err))
@@ -55,7 +55,7 @@ func ExecRunmqrasBySelector(cfg *rest.Config, client kubernetes.Interface, podLi
 	return runmqrasPodExecutorList, nil
 }
 
-func execRunmqras(cfg *rest.Config, pod corev1.Pod, useCustomFile bool, baseContainer string) (container.CopyConfig, error) {
+func execRunmqras(cfg *rest.Config, pod corev1.Pod, useCustomFile bool, baseContainer string, logger *slog.Logger) (container.CopyConfig, error) {
 
 	currentTimestamp := utils.GetCurrentTimestamp(utils.TimestampFormat)
 	workDir := fmt.Sprintf("/tmp/runmqras_%s", currentTimestamp)
@@ -77,6 +77,7 @@ func execRunmqras(cfg *rest.Config, pod corev1.Pod, useCustomFile bool, baseCont
 		Namespace:        pod.Namespace,
 		ContainerName:    baseContainer,
 		Cmd:              cmd,
+		Logger:           logger,
 	}
 	execRequestExecutor, err := pods.ExecCmd(runmqras)
 	if err != nil {

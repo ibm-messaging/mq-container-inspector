@@ -71,7 +71,7 @@ func ValidatePodName(coreClient kubernetes.Interface, podName, namespace string)
 	}
 
 	// check if the pod is a queue manager pod
-	if !isQueueManagerPod(pod) {
+	if !utils.IsQueueManagerPod(pod) {
 		// display all the queue manager pods in the namespace
 		fmt.Printf("Provided pod %s, is not a queue manager pod. Please select a pod from the following list:\n", podName)
 		podNames, err := listAllQueueManagerPods(coreClient, namespace)
@@ -131,20 +131,6 @@ func listAllQueueManagerCRs(dynamicClient dynamic.Interface, qmName, namespace s
 	printQueueManagerCRs(queueManagerList)
 
 	return nil
-
-}
-
-func isQueueManagerPod(pod *corev1.Pod) bool {
-
-	for _, container := range pod.Spec.Containers {
-		for _, env := range container.Env {
-			if env.Name == utils.QueueManagerEnvName && env.Value != "" {
-				return true
-			}
-		}
-	}
-
-	return false
 
 }
 
