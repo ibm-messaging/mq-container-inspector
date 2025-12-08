@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/configmap"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/container"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/runmqras"
@@ -137,7 +138,7 @@ func DeletePVCPods(coreClient kubernetes.Interface, pvcPods []corev1.Pod, flags 
 		fmt.Println("----- Cleaning-up the PVC-inspector pods(This may take some time) -----")
 
 		for _, pvcPod := range pvcPods {
-			err := coreClient.CoreV1().Pods(flags.QueueManagerNamespace).Delete(context.TODO(), pvcPod.ObjectMeta.Name, metav1.DeleteOptions{})
+			err := pods.DeletePodByName(coreClient, pvcPod.ObjectMeta.Name, flags.QueueManagerNamespace)
 			if err != nil {
 				logger.Error(fmt.Sprintf("Error deleting %s pvc-pod: %v", pvcPod.ObjectMeta.Name, err))
 				fmt.Printf("Error deleting %s pvc-pod: %v\n", pvcPod.ObjectMeta.Name, err)
@@ -158,7 +159,7 @@ func DeletePVCPods(coreClient kubernetes.Interface, pvcPods []corev1.Pod, flags 
 	// Delete the custom ConfigMap created to be passed as input-file in the runmqras command
 	logger.Info(fmt.Sprintf("Deleting %s ConfigMap in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
 
-	configMap, err := coreClient.CoreV1().ConfigMaps(flags.QueueManagerNamespace).Get(context.TODO(), utils.CustomISAConfigMap, metav1.GetOptions{})
+	configMap, err := configmap.GetConfigMapDetailsByName(coreClient, utils.CustomISAConfigMap, flags.QueueManagerNamespace)
 	if errors.IsNotFound(err) {
 		logger.Info(fmt.Sprintf("ConfigMap %s not found in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
 	} else if err != nil {
@@ -169,7 +170,7 @@ func DeletePVCPods(coreClient kubernetes.Interface, pvcPods []corev1.Pod, flags 
 	// delete the ConfigMap only if it is managed by mq-container-inspector
 	if managedByMQInspector(configMap) {
 
-		err := coreClient.CoreV1().ConfigMaps(flags.QueueManagerNamespace).Delete(context.TODO(), utils.CustomISAConfigMap, metav1.DeleteOptions{})
+		err := configmap.DeleteConfigMapByName(coreClient, utils.CustomISAConfigMap, flags.QueueManagerNamespace)
 		if errors.IsNotFound(err) {
 			logger.Info(fmt.Sprintf("ConfigMap %s not found in %s namespace", utils.CustomISAConfigMap, flags.QueueManagerNamespace))
 		} else if err != nil {
@@ -302,7 +303,7 @@ func createConfigMap(client kubernetes.Interface, namespace string, logger *slog
 	var configMap *corev1.ConfigMap
 	var err error
 
-	configMap, err = client.CoreV1().ConfigMaps(namespace).Get(context.TODO(), utils.CustomISAConfigMap, metav1.GetOptions{})
+	configMap, err = configmap.GetConfigMapDetailsByName(client, utils.CustomISAConfigMap, namespace)
 	if errors.IsNotFound(err) || configMap == nil {
 		configMapExists = false
 	} else if err != nil {
@@ -327,7 +328,7 @@ func createConfigMap(client kubernetes.Interface, namespace string, logger *slog
 			return nil
 		}
 
-		configMap, err = client.CoreV1().ConfigMaps(namespace).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+		configMap, err = configmap.UpdateConfigMapByName(client, configMap, namespace)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error updating %s config-name in %s namespace: %v", configMap.ObjectMeta.Name, namespace, err))
 			return nil
@@ -343,7 +344,7 @@ func createConfigMap(client kubernetes.Interface, namespace string, logger *slog
 			return fmt.Errorf("error creating ConfigMap in namespace %s: %v", namespace, err)
 		}
 
-		configMap, err := client.CoreV1().ConfigMaps(namespace).Create(context.TODO(), configMap, metav1.CreateOptions{})
+		configMap, err := configmap.CreateConfigMapByName(client, configMap, namespace)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error creating %s config-name in %s namespace: %v", configMap.ObjectMeta.Name, namespace, err))
 			return fmt.Errorf("error creating %s config-name in %s namespace: %v", configMap.ObjectMeta.Name, namespace, err)

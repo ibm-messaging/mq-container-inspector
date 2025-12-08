@@ -262,6 +262,17 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 		logger.Info("---- CP4I details collected ----")
 	}
 
+	// collect ConfigMaps
+	logger.Info("---- Collecting configmap details ----")
+	fmt.Print("Collecting configmap details...")
+	mustGatherStartTime = time.Now()
+	err = gatherConfigMapsToFiles(coreClient, dynamicClient, qmPod, flags, logger)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
+	logger.Info("---- ConfigMap details collected ----")
+
 	// if skip-exec is disabled, and the queue-manager is not pending then collect the web-console and runmqras logs
 	if !flags.SkipExec && !isQueueManagerPending {
 		// collect web-console logs

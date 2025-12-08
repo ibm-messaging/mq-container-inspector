@@ -91,3 +91,7 @@ Usage of mustgather:
 #### webconsole/
 - web-&lt;qm-name&gt;-ibm-mq-0-console.log
 - web-&lt;qm-name&gt;-ibm-mq-0-messages.log
+
+#### configmaps/
+- &lt;mqsc-configmap&gt;.yaml
+- &lt;ini-configmap&gt;.yaml

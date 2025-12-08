@@ -306,3 +306,12 @@ func GetPodEvents(client kubernetes.Interface, pods []corev1.Pod, namespace stri
 	return podEventsMap, nil
 
 }
+
+// DeletePodByName delete pod by name in a given namespace.
+// Parameters:
+//   - client: the Kubernetes client used to interact with the cluster.
+//   - name: the pod name to delete.
+//   - namespace: the namespace in which to search for the pod.
+func DeletePodByName(client kubernetes.Interface, name, namspace string) error {
+	return client.CoreV1().Pods(namspace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+}
