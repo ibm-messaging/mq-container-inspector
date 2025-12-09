@@ -37,6 +37,8 @@ Usage of mustgather:
         directory where the must-gather output folder will be created. Ignored when running via mustgather image (default: current working directory)
   --pod-name
         name of a queue manager pod in the target queue manager instance (exactly one of --qm-name or --pod-name are required)
+  --qm-container
+        name of the container running MQ (default: qmgr)
   --qm-name
         QueueManager custom resource metadata.name (exactly one of --qm-name or --pod-name are required)
   --qm-namespace
