@@ -38,7 +38,7 @@ func WriteQueueManagerCrdYamlToFiles(queueManagerDetailsMap map[string]interface
 		return fmt.Errorf("error while marshalling yaml for queue manager %s: %v", queueManagerName, err)
 	}
 
-	if err := os.WriteFile(fileName, data, 0660); err != nil {
+	if err := os.WriteFile(fileName, data, 0o600); err != nil {
 		return fmt.Errorf("error while writing queue manager %s data to yaml file %s: %v", queueManagerName, fileName, err)
 	}
 
@@ -62,7 +62,7 @@ func WriteIntegrationKeycloakClientCrdYamlToFiles(integrationKeycloakClientDetai
 			return fmt.Errorf("error while marshalling yaml for inetgration-keycloak-client %s: %v", integrationKeycloakClient.GetName(), err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing queue manager %s data to yaml file %s: %v", integrationKeycloakClient.GetName(), fileName, err)
 		}
 

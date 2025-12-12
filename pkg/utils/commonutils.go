@@ -91,7 +91,7 @@ func CheckIfDirectoryExist(dir string) bool {
 }
 
 func CreateDirectory(dir string, perm fs.FileMode) error {
-	if err := os.MkdirAll(dir, perm); err != nil {
+	if err := SafeMkdirAll(dir, ".", perm); err != nil {
 		return fmt.Errorf("error creating output-directory(%s): %v", dir, err)
 	}
 	return nil
@@ -102,9 +102,8 @@ func GetLogFilePath(outputDirectory, logFileName string) string {
 }
 
 func InitializeLogFile(outputDirectory, logFileName string) (*os.File, error) {
-	logFilePath := GetLogFilePath(outputDirectory, logFileName)
 
-	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+	logFile, err := SafeOpenFile(outputDirectory, logFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("error creating logfile %s in base-directory %s: %v", logFileName, outputDirectory, err)
 	}
@@ -132,6 +131,8 @@ func GetFileCountInDirectory(directoryName string) (int, error) {
 
 func DeleteEmptyDirectories(directoryName string, logger *slog.Logger) error {
 
+	baseDir := filepath.Clean(directoryName)
+
 	entries, err := os.ReadDir(directoryName)
 	if err != nil {
 		return fmt.Errorf("error while reading %s directory", directoryName)
@@ -146,7 +147,7 @@ func DeleteEmptyDirectories(directoryName string, logger *slog.Logger) error {
 			}
 
 			if fileCount == 0 {
-				if err := os.RemoveAll(entryPath); err != nil {
+				if err := SafeRemoveAll(baseDir, entry.Name()); err != nil {
 					return err
 				} else {
 					logger.Info(fmt.Sprintf("Deleting empty directory: %s/%s", directoryName, entry.Name()))
@@ -234,5 +235,97 @@ func RemoveFile(file *os.File) error {
 	}
 
 	return nil
+
+}
+
+func SafeJoinUnderBase(baseDir, userPath string) (string, error) {
+
+	if baseDir == "" {
+		return "", fmt.Errorf("base directory must not be empty")
+	}
+
+	// Normalize the baseDir to absolute and cleanPath
+	baseAbs, err := filepath.Abs(filepath.Clean(baseDir))
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve absolute base dir %q: %w", baseDir, err)
+	}
+
+	// Helper to cjheck if candidate is under base
+	isCandidateUnderBase := func(baseAbs, candidateAbs string) bool {
+		sep := string(os.PathSeparator)
+		prefix := baseAbs
+		if !strings.HasSuffix(prefix, sep) {
+			prefix += sep
+		}
+
+		return candidateAbs == baseAbs || strings.HasPrefix(candidateAbs, prefix)
+	}
+
+	// If userPath is absolute (or resolves absolute) and already under base, accept it
+	candidateAbs, err := filepath.Abs(filepath.Clean(userPath))
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve absolute path for %q: %w", userPath, err)
+	}
+
+	if isCandidateUnderBase(baseAbs, candidateAbs) {
+		return candidateAbs, nil
+	}
+
+	// Join and normalize the candidate path
+	joined := filepath.Join(baseAbs, userPath)
+	// Otherwise treat userPath as relative-to-base
+	candidateAbs, err = filepath.Abs(filepath.Clean(joined))
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve absolute path for %q: %w", candidateAbs, err)
+	}
+
+	// Enforce candidate is under baseAbs
+	if !isCandidateUnderBase(baseAbs, candidateAbs) {
+		return "", fmt.Errorf("path %q escapes base directory %q", candidateAbs, baseAbs)
+	}
+
+	return candidateAbs, nil
+
+}
+
+func SafeMkdirAll(baseDir, rel string, perm os.FileMode) error {
+
+	safePath, err := SafeJoinUnderBase(baseDir, rel)
+	if err != nil {
+		return err
+	}
+
+	return os.MkdirAll(safePath, perm)
+
+}
+
+func SafeOpenFile(baseDir, rel string, flags int, perm os.FileMode) (*os.File, error) {
+
+	safePath, err := SafeJoinUnderBase(baseDir, rel)
+	if err != nil {
+		return nil, err
+	}
+
+	return os.OpenFile(safePath, flags, perm)
+
+}
+
+func SafeRemoveAll(baseDir, relativePath string) error {
+
+	safePath, err := SafeJoinUnderBase(baseDir, relativePath)
+	if err != nil {
+		return err
+	}
+
+	baseAbs, err := filepath.Abs(filepath.Clean(baseDir))
+	if err != nil {
+		return err
+	}
+
+	if safePath == baseAbs {
+		return fmt.Errorf("cannot remove base directory %q", baseAbs)
+	}
+
+	return os.RemoveAll(safePath)
 
 }

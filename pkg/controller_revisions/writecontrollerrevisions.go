@@ -53,7 +53,7 @@ func WriteControllerRevisionYamlsToFile(controllerRevisionList []appsv1.Controll
 			return fmt.Errorf("error while marshalling yaml for StatefulSet revision %s: %v", statefulSetName, err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing StatefulSet revision %s data in the yaml file: %v", statefulSetName, err)
 		}
 	}

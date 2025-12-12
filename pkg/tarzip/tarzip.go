@@ -23,16 +23,23 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 )
 
 func TarZipFolder(folderPath string) error {
 
-	// prepare destination
-	destination := folderPath + ".tar.gz"
-	destinationFile, err := os.Create(destination)
+	cleanFolder := filepath.Clean(folderPath)
+	parentDir := filepath.Dir(cleanFolder)
+	baseName := filepath.Base(cleanFolder)
+
+	destRel := baseName + ".tar.gz"
+
+	destinationFile, err := utils.SafeOpenFile(parentDir, destRel, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
 	}
+	defer destinationFile.Close()
 
 	// setup gzip and tar
 	gzipWriter := gzip.NewWriter(destinationFile)
@@ -42,7 +49,7 @@ func TarZipFolder(folderPath string) error {
 	defer tarWriter.Close()
 
 	// we dont want to tar the parent directory
-	parentDir := filepath.Dir(folderPath)
+	parentDir = filepath.Dir(folderPath)
 
 	return filepath.WalkDir(folderPath, func(path string, dirEntry fs.DirEntry, err error) error {
 
@@ -75,7 +82,13 @@ func TarZipFolder(folderPath string) error {
 		}
 
 		if !info.IsDir() {
-			file, err := os.Open(path)
+
+			relFromFolder, err := filepath.Rel(cleanFolder, path)
+			if err != nil {
+				return err
+			}
+
+			file, err := utils.SafeOpenFile(cleanFolder, relFromFolder, os.O_RDONLY, 0)
 			if err != nil {
 				return err
 			}

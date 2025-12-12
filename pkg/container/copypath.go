@@ -145,7 +145,14 @@ func (t *copyPipe) Close() error {
 // Copy all files from the sourcePath to the destinationPath using a copyPipe
 func copyAll(sourcePath, destinationPath string, pipe io.Reader) error {
 	pipeReader := tar.NewReader(pipe)
-	cleanDest := filepath.Clean(destinationPath)
+	destBase := filepath.Clean(destinationPath)
+
+	var singleFileName string
+
+	if filepath.Ext(destinationPath) != "" {
+		singleFileName = filepath.Base(destBase)
+		destBase = filepath.Dir(destBase)
+	}
 
 	for {
 		h, err := pipeReader.Next()
@@ -161,27 +168,31 @@ func copyAll(sourcePath, destinationPath string, pipe io.Reader) error {
 			return fmt.Errorf("tar contents corrupted (entry %q lacks expected prefix %q)", h.Name, sourcePath)
 		}
 		rel := strings.TrimPrefix(h.Name, sourcePath)
-		dstPath := filepath.Join(destinationPath, rel)
-		cleanPath := filepath.Clean(dstPath)
+		rel = strings.TrimLeft(rel, string(os.PathSeparator))
 
-		// Allow writing to destDir itself *or* to any child of it, but nowhere else.
-		if cleanPath != cleanDest && !strings.HasPrefix(cleanPath, cleanDest+string(os.PathSeparator)) {
-			return fmt.Errorf("tar entry %q would write outside %q", h.Name, destinationPath)
+		if rel == "" {
+			if singleFileName != "" {
+				rel = singleFileName
+			} else {
+				rel = "."
+			}
 		}
 
 		if h.FileInfo().IsDir() {
-			if err = os.MkdirAll(dstPath, 0755); err != nil {
+			if err = utils.SafeMkdirAll(destBase, rel, 0o700); err != nil {
 				return err
 			}
 			continue
 		}
 
+		parentRel := filepath.Dir(rel)
+
 		// Ensure parent dir exists
-		if err = os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
+		if err = utils.SafeMkdirAll(destBase, parentRel, 0o700); err != nil {
 			return err
 		}
 
-		out, err := os.Create(dstPath)
+		out, err := utils.SafeOpenFile(destBase, rel, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 		if err != nil {
 			return err
 		}

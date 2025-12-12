@@ -40,7 +40,7 @@ func WriteCSVYamlsToFile(csvDetailsList []unstructured.Unstructured, fileNameFor
 			return fmt.Errorf("error while marshalling yaml for csv %s: %v", csvObj.GetName(), err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing csv %s data in the yaml file: %v", csvObj.GetName(), err)
 		}
 

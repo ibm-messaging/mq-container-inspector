@@ -40,7 +40,7 @@ func WriteServiceYamlsToFile(serviceList []corev1.Service, filNameFormat, output
 			return fmt.Errorf("error while marshalling yaml for service %s: %v", service.Name, err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing service %s data in the yaml file: %v", service.Name, err)
 		}
 

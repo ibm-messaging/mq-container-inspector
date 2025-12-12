@@ -43,7 +43,7 @@ func WriteStatefulSetYamlsToFile(statefulSetList []appsv1.StatefulSet, fileNameF
 			return fmt.Errorf("error while marshalling yaml for StatefulSet %s: %v", statefulSet.Name, err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing StatefulSet %s data in the yaml file: %v", statefulSet.Name, err)
 		}
 
@@ -64,11 +64,11 @@ func WriteStatefulSetEventsToFile(statefulSetEventsMap map[string][]corev1.Event
 
 		if len(statefulSetEvents) > 0 {
 
-			fileName := utils.FormatFilePath(outputDir, fileNameFormat, statefulSetName)
+			filePath := utils.FormatFilePath(outputDir, fileNameFormat, statefulSetName)
 
-			file, err := os.Create(fileName)
+			file, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 			if err != nil {
-				return fmt.Errorf("error creating %s StatefulSet event file %s: %v", statefulSetName, fileName, err)
+				return fmt.Errorf("error creating file(%s): %v", filePath, err)
 			}
 
 			// tabwriter will handle dynamic spacing

@@ -38,11 +38,11 @@ func WritePodDetailsToFile(podList []corev1.Pod, fileNameFormat, outputDir strin
 
 	if len(podList) > 0 {
 
-		fileName := utils.FormatFilePath(outputDir, fileNameFormat)
+		filePath := utils.FormatFilePath(outputDir, fileNameFormat)
 
-		file, err := os.Create(fileName)
+		file, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 		if err != nil {
-			return fmt.Errorf("error creating file(%s): %v", fileName, err)
+			return fmt.Errorf("error creating file(%s): %v", filePath, err)
 		}
 		defer file.Close()
 
@@ -94,7 +94,7 @@ func WritePodYamlsToFile(podList []corev1.Pod, fileNameFormat, outputDir string)
 			return fmt.Errorf("error while marshalling yaml for pod %s: %v", pod.Name, err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing pod %s data in the yaml file: %v", pod.Name, err)
 		}
 	}
@@ -111,14 +111,14 @@ func WritePodYamlsToFile(podList []corev1.Pod, fileNameFormat, outputDir string)
 func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, outputDir string, logger *slog.Logger) error {
 
 	for podName, podLog := range podLogsMap {
-		var fileName string
+		var filePath string
 
 		if podLog.PreviousPodLogsRequest != nil {
-			fileName = utils.FormatFilePath(outputDir, fileNameFormat, podName, "previous")
+			filePath = utils.FormatFilePath(outputDir, fileNameFormat, podName, "previous")
 
-			prevLogFile, err := os.Create(fileName)
+			prevLogFile, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 			if err != nil {
-				return fmt.Errorf("error creating %s pod previous log file %s: %v", podName, fileName, err)
+				return fmt.Errorf("error creating file(%s): %v", filePath, err)
 			}
 
 			previousPodLogsStream, err := podLog.PreviousPodLogsRequest.Stream(context.TODO())
@@ -134,7 +134,7 @@ func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, out
 
 				if _, err := io.Copy(prevLogFile, previousPodLogsStream); err != nil {
 					prevLogFile.Close()
-					return fmt.Errorf("error while writing %s pod previous logs to file %s: %v", podName, fileName, err)
+					return fmt.Errorf("error while writing %s pod previous logs to file %s: %v", podName, filePath, err)
 				}
 			}
 
@@ -142,11 +142,11 @@ func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, out
 
 		}
 
-		fileName = utils.FormatFilePath(outputDir, fileNameFormat, podName, "current")
+		filePath = utils.FormatFilePath(outputDir, fileNameFormat, podName, "current")
 
-		curLogFile, err := os.Create(fileName)
+		curLogFile, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 		if err != nil {
-			return fmt.Errorf("error creating %s pod current log file %s: %v", podName, fileName, err)
+			return fmt.Errorf("error creating file(%s): %v", filePath, err)
 		}
 
 		currentPodLogsStream, err := podLog.CurrentPodLogsRequest.Stream(context.TODO())
@@ -162,7 +162,7 @@ func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, out
 
 			if _, err := io.Copy(curLogFile, currentPodLogsStream); err != nil {
 				curLogFile.Close()
-				return fmt.Errorf("error while writing %s pod current logs to file %s: %v", podName, fileName, err)
+				return fmt.Errorf("error while writing %s pod current logs to file %s: %v", podName, filePath, err)
 			}
 		}
 
@@ -184,7 +184,7 @@ func WritePodDescribeLogsToFile(podDescribeLogsMap map[string]string, fileNameFo
 
 		fileName := utils.FormatFilePath(outputDir, fileNameFormat, podName)
 
-		if err := os.WriteFile(fileName, []byte(podDescribeLogs), 0660); err != nil {
+		if err := os.WriteFile(fileName, []byte(podDescribeLogs), 0o600); err != nil {
 			return fmt.Errorf("error while writing %s pod describe logs to file %s: %v", podName, fileName, err)
 		}
 
@@ -205,11 +205,11 @@ func WritePodEventsToFile(podEventMap map[string][]corev1.Event, fileNameFormat,
 
 		if len(podEvents) > 0 {
 
-			fileName := utils.FormatFilePath(outputDir, fileNameFormat, podName)
+			filePath := utils.FormatFilePath(outputDir, fileNameFormat, podName)
 
-			file, err := os.Create(fileName)
+			file, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 			if err != nil {
-				return fmt.Errorf("error creating %s pod event file %s: %v", podName, fileName, err)
+				return fmt.Errorf("error creating file(%s): %v", filePath, err)
 			}
 
 			// tabwriter will handle dynamic spacing

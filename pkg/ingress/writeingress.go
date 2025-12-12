@@ -41,7 +41,7 @@ func WriteIngressYamlsToFile(ingressList []networkingv1.Ingress, fileNameFormat,
 			return fmt.Errorf("error while marshalling yaml for ingress %s: %v", ingress.ObjectMeta.Name, err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing ingress %s data in the yaml file: %v", ingress.ObjectMeta.Name, err)
 		}
 

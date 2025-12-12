@@ -40,7 +40,7 @@ func WriteRouteDetailsBySelectorToFile(routeList []routeV1.Route, fileNameFormat
 			return fmt.Errorf("error marshalling yaml for route %s: %v", route.Name, err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing route %s data to yaml file %s: %v", route.Name, fileName, err)
 		}
 

@@ -44,7 +44,7 @@ func WriteDaemonSetsToFile(daemonSetList []appsv1.DaemonSet, fileNameFormat, out
 			return fmt.Errorf("error while marshalling yaml for daemonset %s: %v", daemonSet.ObjectMeta.Name, err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing %s daemonset data in the yaml file: %v", daemonSet.ObjectMeta.Name, err)
 		}
 
@@ -65,11 +65,11 @@ func WriteDaemonSetEventsToFile(daemonsetEventsEventMap map[string][]corev1.Even
 
 		if len(daemonSetEvents) > 0 {
 
-			fileName := utils.FormatFilePath(outputDir, fileNameFormat, daemonSetName)
+			filePath := utils.FormatFilePath(outputDir, fileNameFormat, daemonSetName)
 
-			file, err := os.Create(fileName)
+			file, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 			if err != nil {
-				return fmt.Errorf("error creating %s daemonset event file %s: %v", daemonSetName, fileName, err)
+				return fmt.Errorf("error creating file(%s): %v", filePath, err)
 			}
 
 			// tabwriter will handle dynamic spacing

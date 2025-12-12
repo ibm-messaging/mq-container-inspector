@@ -40,7 +40,7 @@ func WritePVCYamlsToFile(pvcList []corev1.PersistentVolumeClaim, fileNameFormat,
 			return fmt.Errorf("error while marshalling yaml for pvc %s: %v", pvc.Name, err)
 		}
 
-		if err := os.WriteFile(fileName, data, 0660); err != nil {
+		if err := os.WriteFile(fileName, data, 0o600); err != nil {
 			return fmt.Errorf("error while writing pvc %s data in the yaml file: %v", pvc.Name, err)
 		}
 
