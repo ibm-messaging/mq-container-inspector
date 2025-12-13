@@ -130,8 +130,8 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	}
 
 	// collect pods must-gathers
-	logger.Info("---- Collecting pod details ----")
-	fmt.Print("Collecting pod details...")
+	logger.Info("---- Collecting pod details(This may take time) ----")
+	fmt.Print("Collecting pod details(This may take time)...")
 	mustGatherStartTime := time.Now()
 	failedPodNames, err := gatherPodsToFiles(coreClient, flags, logger)
 	if err != nil {

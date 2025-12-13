@@ -71,3 +71,20 @@ func WriteIntegrationKeycloakClientCrdYamlToFiles(integrationKeycloakClientDetai
 	return nil
 
 }
+
+func WriteQueueManagerLastValidConfigToFiles(lastValidCofigurationBytes []byte, fileNameFormat, outputDir, queueManagerName string) error {
+
+	fileName := utils.FormatFilePath(outputDir, fileNameFormat, queueManagerName)
+
+	data, err := yaml.JSONToYAML(lastValidCofigurationBytes)
+	if err != nil {
+		return fmt.Errorf("error while marshalling yaml for queue manager %s: %v", queueManagerName, err)
+	}
+
+	if err := os.WriteFile(fileName, data, 0o600); err != nil {
+		return fmt.Errorf("error while writing queue manager %s data to yaml file %s: %v", queueManagerName, fileName, err)
+	}
+
+	return nil
+
+}

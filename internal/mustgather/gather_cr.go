@@ -16,6 +16,7 @@ limitations under the License.
 package mustgather
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -47,6 +48,21 @@ func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 	}
 
 	logger.Info(fmt.Sprintf("Found %s queue manager in %s namespace", flags.QueueManagerName, flags.QueueManagerNamespace))
+
+	// check if we have lastValidConfiguration in the queue-manager cr
+	if ok, lastValidConfiguration := queueManagerCrHasLastValidConfiguration(queueManagerDetailsMap); ok {
+		logger.Info(fmt.Sprintf("'lastValidConfiguration' found in the status.metadata.lastValidConfiguration for %s queue-manager", flags.QueueManagerName))
+		decodedBytes, err := base64.StdEncoding.DecodeString(lastValidConfiguration)
+		if err != nil {
+			logger.Info(fmt.Sprintf("Error decoding lastValidConfiguration: %v", err))
+		}
+
+		// write the lastValidConfiguration to its yaml file
+		fileNameFormat := "%s-last-valid-config.yaml"
+		if err := cr.WriteQueueManagerLastValidConfigToFiles(decodedBytes, fileNameFormat, qmDirectory, flags.QueueManagerName); err != nil {
+			logger.Info(fmt.Sprintf("%s", err.Error()))
+		}
+	}
 
 	//write the QueueManager details to its yaml
 	fileNameFormat := "%s.yaml"
@@ -88,5 +104,42 @@ func gatherCRsToFiles(dynamicClient dynamic.Interface, flags utils.MustGatherFla
 	}
 
 	return nil
+
+}
+
+func queueManagerCrHasLastValidConfiguration(queueManagerDetailsMap map[string]interface{}) (bool, string) {
+
+	qmStatusVal, ok := queueManagerDetailsMap["status"]
+	if !ok || qmStatusVal == nil {
+		return false, ""
+	}
+
+	qmStatus, ok := qmStatusVal.(map[string]interface{})
+	if !ok {
+		return false, ""
+	}
+
+	qmMetaValue, ok := qmStatus["metadata"]
+	if !ok || qmMetaValue == nil {
+		return false, ""
+	}
+
+	qmStatusMetadata, ok := qmMetaValue.(map[string]interface{})
+	if !ok {
+		return false, ""
+	}
+
+	// Get "lastValidConfiguration" safely
+	lastValidConfigvalue, ok := qmStatusMetadata["lastValidConfiguration"]
+	if !ok || lastValidConfigvalue == nil {
+		return false, ""
+	}
+
+	lastValidConfiguration, ok := lastValidConfigvalue.(string)
+	if !ok || lastValidConfiguration == "" {
+		return false, ""
+	}
+
+	return true, lastValidConfiguration
 
 }

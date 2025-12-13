@@ -3,6 +3,7 @@ package configmap
 import (
 	"context"
 
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -14,7 +15,16 @@ import (
 //   - name: the configmap name to fetch the details for.
 //   - namespace: the namespace in which to search for the configmap.
 func GetConfigMapDetailsByName(client kubernetes.Interface, name, namespace string) (*corev1.ConfigMap, error) {
-	return client.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	configMap, err := client.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// the configmap get API returns the configmap with the apiVersion and kind field as empty, so setting them explicitly
+	configMap.TypeMeta.APIVersion = utils.ApiVersionV1
+	configMap.TypeMeta.Kind = utils.KindConfigMap
+
+	return configMap, nil
 }
 
 // DeleteConfigMapByName delete's the configmap by name in a given namespace.
