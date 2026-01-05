@@ -312,7 +312,7 @@ func createConfigMap(client kubernetes.Interface, namespace string, logger *slog
 	}
 
 	// check if the ConfigMap is not empty and has the owner label
-	if configMap.Data != nil && !managedByMQInspector(configMap) {
+	if configMap != nil && configMap.Data != nil && !managedByMQInspector(configMap) {
 		// the ConfigMap with the same name already exists, without the managed-by label
 		logger.Error(fmt.Sprintf("Error creating ConfigMap in namespace %s: ConfigMap %s already exists", namespace, utils.CustomISAConfigMap))
 		return fmt.Errorf("error creating ConfigMap in namespace %s: ConfigMap %s already exists. Please delete the %s ConfigMap and re-run the pvc-inspector tool", namespace, utils.CustomISAConfigMap, utils.CustomISAConfigMap)
@@ -363,7 +363,7 @@ func getConfigMap(configMap *corev1.ConfigMap, namespace string) (*corev1.Config
 		return nil, err
 	}
 
-	if configMap.Data != nil {
+	if configMap != nil && configMap.Data != nil {
 		configMap.Data = map[string]string{
 			utils.CustomISAFileName: fileData,
 		}
