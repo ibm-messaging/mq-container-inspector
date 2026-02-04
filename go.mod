@@ -1,6 +1,6 @@
 module github.ibm.com/mq-cloudpak/mq-container-inspector
 
-go 1.24.6
+go 1.25.3
 
 require (
 	github.com/openshift/api v0.0.0-20250517062239-9cbdb71c92bb
