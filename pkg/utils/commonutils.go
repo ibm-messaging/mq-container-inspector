@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025, 2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -52,6 +52,15 @@ type PVCInspectorFlags struct {
 	SkipTar               bool   // whether to tar+zip the pvc-inspector output
 	Help                  bool   // Flag to display help message
 	Runmqras              bool   // whether to run the runmqras command automatically
+}
+
+type MQAgentFlags struct {
+	AgentReleaseName string // Release name for MQ-Agent
+	Namespace        string // namespace where agent is installed
+	KubeconfigPath   string // path to the kubeconfig file
+	OutputDir        string // directory where the collected mq-agent must-gather data will be stored
+	SkipTar          bool   // whether to tar+zip the pvc-inspector output
+	Help             bool   // Flag to display help message
 }
 
 func GetCurrentTimestamp(timeFormat string) string {

@@ -30,7 +30,7 @@ import (
 
 func PVCIncpectorTool(args []string) error {
 
-	// create flagset for "mustgather" os arg, and parse the args
+	// create flagset for "pvctool" os arg, and parse the args
 	flags, err := parseFlags(args)
 	if err != nil {
 		if err.Error() == "help" {

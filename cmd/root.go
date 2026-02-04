@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025, 2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/cmd/mqagent"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/cmd/mustgather"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/cmd/pvcinspectortool"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
@@ -48,6 +49,14 @@ func Execute() {
 			os.Exit(1)
 		}
 		fmt.Println("PVC data collected")
+	case utils.MQAgents:
+		fmt.Println("Starting MQ-Agent must-gather tool")
+		err := mqagent.MQAgent(args[1:])
+		if err != nil {
+			fmt.Printf("MQ-Agent must-gather FAILED: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("MQ-Agent must-gather collected")
 	case utils.Version:
 		printVersion()
 	default:
@@ -67,11 +76,13 @@ Usage:
 Available Commands:
   mustgather     Collect diagnostic data for a queue manager
   pvctool        Inspect PVCs associated with a queue manager
+  mq-agent       Collect diagnostic data for mq-agent
   version        Print the version of mq-container-inspector
 
 Examples:
   mq-container-inspector mustgather --qm-name <queue-manager-name> --qm-namespace <namespace>
   mq-container-inspector pvctool --qm-name <queue-manager-name> --qm-namespace <namespace>
+  mq-container-inspector mq-agent --agent-release-name <release-name> --namespace <namespace>
 
 Use "mq-container-inspector <command> --help" for more information about a command.`)
 
