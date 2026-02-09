@@ -116,57 +116,51 @@ func WritePodLogsToFile(podLogsMap map[string]utils.PodLogs, fileNameFormat, out
 		if podLog.PreviousPodLogsRequest != nil {
 			filePath = utils.FormatFilePath(outputDir, fileNameFormat, podName, "previous")
 
-			prevLogFile, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
-			if err != nil {
-				return fmt.Errorf("error creating file(%s): %v", filePath, err)
+			if err := writePrevPodLogs(podLog, podName, filePath, outputDir, logger); err != nil {
+				return err
 			}
-
-			previousPodLogsStream, err := podLog.PreviousPodLogsRequest.Stream(context.TODO())
-			if err != nil {
-				logger.Info(fmt.Sprintf("Error getting pod %s, previous log stream: %v", podName, err))
-				prevLogFile.Close()
-
-				// remove the empty file
-				if err := utils.RemoveFile(prevLogFile); err != nil {
-					logger.Info(fmt.Sprintf("Error removing %s file: %v", prevLogFile.Name(), err))
-				}
-			} else {
-
-				if _, err := io.Copy(prevLogFile, previousPodLogsStream); err != nil {
-					prevLogFile.Close()
-					return fmt.Errorf("error while writing %s pod previous logs to file %s: %v", podName, filePath, err)
-				}
-			}
-
-			prevLogFile.Close()
 
 		}
 
 		filePath = utils.FormatFilePath(outputDir, fileNameFormat, podName, "current")
 
-		curLogFile, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
-		if err != nil {
-			return fmt.Errorf("error creating file(%s): %v", filePath, err)
+		if err := writeCurrentPodLogs(podLog, podName, filePath, outputDir, logger); err != nil {
+			return err
 		}
+	}
 
-		currentPodLogsStream, err := podLog.CurrentPodLogsRequest.Stream(context.TODO())
-		if err != nil {
-			logger.Info(fmt.Sprintf("error getting pod %s, current log stream: %v", podName, err))
-			curLogFile.Close()
+	return nil
 
-			// remove the empty file
-			if err := utils.RemoveFile(curLogFile); err != nil {
-				logger.Info(fmt.Sprintf("Error removing %s file: %v", curLogFile.Name(), err))
+}
+
+// WritePodAllContainerLogsToFile writes each pod’s every container logs to their respective files.
+// Parameters:
+//   - podContainerLogsMap:     a map where each pod name maps to its containers, and each container maps to its PodLogs.
+//   - fileNameFormat: the format string used to name each file; must contain three "%s" verbs—first for the container name, second for pod name and third for "current" or "previous" based on log type.
+//   - outputDir:      the directory in which the log files will be created.
+func WritePodAllContainerLogsToFile(podContainerLogsMap map[string]map[string]utils.PodLogs, fileNameFormat, outputDir string, logger *slog.Logger) error {
+
+	for podName, containerDetailsMap := range podContainerLogsMap {
+
+		for containerName, logs := range containerDetailsMap {
+
+			var filePath string
+
+			if logs.PreviousPodLogsRequest != nil {
+				filePath = utils.FormatFilePath(outputDir, fileNameFormat, containerName, podName, "previous")
+
+				if err := writePrevPodLogs(logs, podName, filePath, outputDir, logger); err != nil {
+					return err
+				}
 			}
-		} else {
 
-			if _, err := io.Copy(curLogFile, currentPodLogsStream); err != nil {
-				curLogFile.Close()
-				return fmt.Errorf("error while writing %s pod current logs to file %s: %v", podName, filePath, err)
+			filePath = utils.FormatFilePath(outputDir, fileNameFormat, containerName, podName, "current")
+
+			if err := writeCurrentPodLogs(logs, podName, filePath, outputDir, logger); err != nil {
+				return err
 			}
+
 		}
-
-		curLogFile.Close()
 	}
 
 	return nil
@@ -297,4 +291,60 @@ func getPodAge(podCreationTime time.Time) string {
 	default:
 		return fmt.Sprintf("%ds", seconds)
 	}
+}
+
+func writePrevPodLogs(podLog utils.PodLogs, podName, filePath, outputDir string, logger *slog.Logger) error {
+	prevLogFile, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		return fmt.Errorf("error creating file(%s): %v", filePath, err)
+	}
+
+	previousPodLogsStream, err := podLog.PreviousPodLogsRequest.Stream(context.TODO())
+	if err != nil {
+		logger.Info(fmt.Sprintf("Error getting pod %s, previous log stream: %v", podName, err))
+		prevLogFile.Close()
+
+		// remove the empty file
+		if err := utils.RemoveFile(prevLogFile); err != nil {
+			logger.Info(fmt.Sprintf("Error removing %s file: %v", prevLogFile.Name(), err))
+		}
+	} else {
+
+		if _, err := io.Copy(prevLogFile, previousPodLogsStream); err != nil {
+			prevLogFile.Close()
+			return fmt.Errorf("error while writing %s pod previous logs to file %s: %v", podName, filePath, err)
+		}
+	}
+
+	prevLogFile.Close()
+
+	return nil
+}
+
+func writeCurrentPodLogs(podLog utils.PodLogs, podName, filePath, outputDir string, logger *slog.Logger) error {
+	curLogFile, err := utils.SafeOpenFile(outputDir, filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		return fmt.Errorf("error creating file(%s): %v", filePath, err)
+	}
+
+	currentPodLogsStream, err := podLog.CurrentPodLogsRequest.Stream(context.TODO())
+	if err != nil {
+		logger.Info(fmt.Sprintf("error getting pod %s, current log stream: %v", podName, err))
+		curLogFile.Close()
+
+		// remove the empty file
+		if err := utils.RemoveFile(curLogFile); err != nil {
+			logger.Info(fmt.Sprintf("Error removing %s file: %v", curLogFile.Name(), err))
+		}
+	} else {
+
+		if _, err := io.Copy(curLogFile, currentPodLogsStream); err != nil {
+			curLogFile.Close()
+			return fmt.Errorf("error while writing %s pod current logs to file %s: %v", podName, filePath, err)
+		}
+	}
+
+	curLogFile.Close()
+
+	return nil
 }

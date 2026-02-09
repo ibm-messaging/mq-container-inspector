@@ -51,9 +51,9 @@ func GetServiceDetailsBySelector(client kubernetes.Interface, selector, namespac
 //   - client: the Kubernetes client used to interact with the cluster.
 //   - podName: the pod name used to filter the services.
 //   - namespace: the namespace in which to search for the services.
-func GetServiceDetailsByPodName(client kubernetes.Interface, podName, namsespace string) ([]corev1.Service, error) {
+func GetServiceDetailsByPodName(client kubernetes.Interface, podName, namespace string) ([]corev1.Service, error) {
 
-	podList, err := pods.GetMQReplicaPodsViaService(client, podName, namsespace)
+	podList, err := pods.GetMQReplicaPodsViaService(client, podName, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func GetServiceDetailsByPodName(client kubernetes.Interface, podName, namsespace
 	}
 
 	// fetch all the services in the namespace
-	serviceList, err := client.CoreV1().Services(namsespace).List(context.TODO(), metav1.ListOptions{})
+	serviceList, err := client.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

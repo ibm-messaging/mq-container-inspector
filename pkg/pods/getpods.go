@@ -18,6 +18,7 @@ package pods
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -205,39 +206,39 @@ func GetPodLogs(client kubernetes.Interface, pods []corev1.Pod, namespace, conta
 
 	for _, pod := range pods {
 
-		hasContainerRestarted := false
-		hasLastTerminationStateTerminated := false // for cases when the restartCount>0 but there are no previous logs
-
-		for _, container := range pod.Status.ContainerStatuses {
-			if container.Name == containerName {
-				hasContainerRestarted = container.RestartCount > 0
-				hasLastTerminationStateTerminated = container.LastTerminationState.Terminated != nil
-				break
-			}
-		}
-
-		var prevPodLogsRequest *rest.Request
-
-		if hasContainerRestarted && hasLastTerminationStateTerminated {
-			prevPodLogsRequest = client.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
-				Container: containerName,
-				Previous:  true,
-			})
-		}
-
-		currentPodLogsRequest := client.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
-			Container: containerName,
-		})
-
-		podLogs := utils.PodLogs{
-			PreviousPodLogsRequest: prevPodLogsRequest,
-			CurrentPodLogsRequest:  currentPodLogsRequest,
-		}
-
-		podLogsMap[pod.Name] = podLogs
+		podLogsMap[pod.Name] = getPodLogs(client, pod, namespace, containerName)
 	}
 
 	return podLogsMap
+
+}
+
+func GetPodLogsForAllContainers(client kubernetes.Interface, podContainerNamesMap map[string][]string, namespace string, logger *slog.Logger) map[string]map[string]utils.PodLogs {
+
+	podContainerLogsMap := make(map[string]map[string]utils.PodLogs)
+
+	for podName, containerNames := range podContainerNamesMap {
+
+		containerLogsMap := make(map[string]utils.PodLogs)
+
+		pod, err := GetPodByName(client, podName, namespace)
+		if err != nil {
+			logger.Error(fmt.Sprintf("error fetching pod details for %s pod in %s namespace: %v", podName, namespace, err))
+			continue
+		}
+
+		for _, containerName := range containerNames {
+
+			podLogs := getPodLogs(client, *pod, namespace, containerName)
+			containerLogsMap[containerName] = podLogs
+
+		}
+
+		podContainerLogsMap[podName] = containerLogsMap
+
+	}
+
+	return podContainerLogsMap
 
 }
 
@@ -314,4 +315,35 @@ func GetPodEvents(client kubernetes.Interface, pods []corev1.Pod, namespace stri
 //   - namespace: the namespace in which to search for the pod.
 func DeletePodByName(client kubernetes.Interface, name, namspace string) error {
 	return client.CoreV1().Pods(namspace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+}
+
+func getPodLogs(client kubernetes.Interface, pod corev1.Pod, namespace, containerName string) utils.PodLogs {
+	hasContainerRestarted := false
+	hasLastTerminationStateTerminated := false // for cases when the restartCount>0 but there are no previous logs
+
+	for _, container := range pod.Status.ContainerStatuses {
+		if container.Name == containerName {
+			hasContainerRestarted = container.RestartCount > 0
+			hasLastTerminationStateTerminated = container.LastTerminationState.Terminated != nil
+			break
+		}
+	}
+
+	var prevPodLogsRequest *rest.Request
+
+	if hasContainerRestarted && hasLastTerminationStateTerminated {
+		prevPodLogsRequest = client.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+			Container: containerName,
+			Previous:  true,
+		})
+	}
+
+	currentPodLogsRequest := client.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+		Container: containerName,
+	})
+
+	return utils.PodLogs{
+		PreviousPodLogsRequest: prevPodLogsRequest,
+		CurrentPodLogsRequest:  currentPodLogsRequest,
+	}
 }

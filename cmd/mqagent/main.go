@@ -147,7 +147,7 @@ func validateRequiredFlags(flags utils.MQAgentFlags) (bool, string) {
 	}
 
 	if flags.Namespace == "" {
-		return false, "--namspace is required"
+		return false, "--namespace is required"
 	}
 
 	return true, ""

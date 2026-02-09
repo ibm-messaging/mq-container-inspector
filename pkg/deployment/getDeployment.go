@@ -48,25 +48,19 @@ func GetDeploymentsBySelector(client kubernetes.Interface, selector, namespace s
 
 }
 
-// GetDeploymentEventsBySelector retrieves all depoyment events in a given namespace that match the provided selector.
+// GetEventsForDeploymentList retrieves all depoyment events in a given namespace that match the provided selector.
 // Parameters:
 //   - client: the Kubernetes client used to interact with the cluster.
-//   - selector: the label selector used to filter the deployments.
-//   - namespace: the namespace in which to search for the deployments.
-func GetDeploymentEventsBySelector(client kubernetes.Interface, selector, namespace string) (map[string][]corev1.Event, error) {
-
-	deployments, err := GetDeploymentsBySelector(client, selector, namespace)
-	if err != nil {
-		return nil, err
-	}
+//   - deployments: the deployments for which to collect the events
+func GetEventsForDeploymentList(client kubernetes.Interface, deploymentList []appsv1.Deployment) (map[string][]corev1.Event, error) {
 
 	deploymentEvents := make(map[string][]corev1.Event)
 
-	for _, deployment := range deployments {
+	for _, deployment := range deploymentList {
 
 		fieldSelector := fmt.Sprintf("involvedObject.name=%s", deployment.ObjectMeta.Name)
 
-		eventList, err := client.CoreV1().Events(namespace).List(context.TODO(), metav1.ListOptions{
+		eventList, err := client.CoreV1().Events(deployment.ObjectMeta.Namespace).List(context.TODO(), metav1.ListOptions{
 			FieldSelector: fieldSelector,
 		})
 		if err != nil {

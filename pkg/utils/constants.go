@@ -111,6 +111,8 @@ const MustGatherLogFileName = "must-gather-logs.log"
 
 const PVCInspectorLogFileName = "pvc-inspector-logs.log"
 
+const MQAgentMustGatherLogFileName = "mq-agent-must-gather-logs.log"
+
 const CRDGroup = "apiextensions.k8s.io"
 
 const CRDResource = "customresourcedefinitions"
@@ -142,3 +144,9 @@ const CustomISAFileName = "custom-isa.xml"
 const MQInspectorManagedLabel = "app.kubernetes.io/managed-by:mq-container-inspector"
 
 const QueueManagerStatusPending = "Pending"
+
+const MQAgentLabels = "app.kubernetes.io/managed-by=Helm,app.kubernetes.io/component=integration"
+
+const HelmReleaseNameAnnotation = "meta.helm.sh/release-name"
+
+const HelmReleaseNamespaceAnnotation = "meta.helm.sh/release-namespace"

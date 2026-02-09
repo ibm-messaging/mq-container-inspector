@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 )
@@ -337,4 +338,54 @@ func SafeRemoveAll(baseDir, relativePath string) error {
 
 	return os.RemoveAll(safePath)
 
+}
+
+func FetchPodContainers(pods []corev1.Pod) map[string][]string {
+
+	podContainerNameMap := make(map[string][]string)
+
+	for _, pod := range pods {
+		var containerNames []string
+		for _, container := range pod.Spec.Containers {
+			containerNames = append(containerNames, container.Name)
+		}
+		podContainerNameMap[pod.ObjectMeta.Name] = containerNames
+	}
+
+	return podContainerNameMap
+
+}
+
+func FilterDeploymentListByAnnotation(deploymentList []appsv1.Deployment, annotationKey string, annotationValue string) []appsv1.Deployment {
+	var deployments []appsv1.Deployment
+
+	for _, deployment := range deploymentList {
+
+		annotations := deployment.Annotations
+
+		// check if release-name annotation matches
+		if value, ok := annotations[annotationKey]; ok && value == annotationValue {
+			deployments = append(deployments, deployment)
+		}
+
+	}
+
+	return deployments
+}
+
+func FilterReplicasetListByAnnotation(replicasetList []appsv1.ReplicaSet, annotationKey string, annotationValue string) []appsv1.ReplicaSet {
+
+	var replicasets []appsv1.ReplicaSet
+
+	for _, replicaset := range replicasetList {
+
+		annotations := replicaset.Annotations
+
+		// check if release-name annotation matches
+		if value, ok := annotations[annotationKey]; ok && value == annotationValue {
+			replicasets = append(replicasets, replicaset)
+		}
+	}
+
+	return replicasets
 }
