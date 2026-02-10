@@ -389,3 +389,19 @@ func FilterReplicasetListByAnnotation(replicasetList []appsv1.ReplicaSet, annota
 
 	return replicasets
 }
+
+func FilterServiceListByAnnotation(servicesList []corev1.Service, annotationKey string, annotationValue string) []corev1.Service {
+	
+	var services []corev1.Service
+
+	for _, service := range servicesList {
+		annotations := service.Annotations
+
+		// check if release-name annotation matches
+		if value, ok := annotations[annotationKey]; ok && value == annotationValue {
+			services = append(services, service)
+		}
+	}
+
+	return services
+}

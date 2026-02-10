@@ -147,6 +147,8 @@ const QueueManagerStatusPending = "Pending"
 
 const MQAgentLabels = "app.kubernetes.io/managed-by=Helm,app.kubernetes.io/component=integration"
 
+const MQAgentServiceLabels = "app.kubernetes.io/managed-by=Helm"
+
 const HelmReleaseNameAnnotation = "meta.helm.sh/release-name"
 
 const HelmReleaseNamespaceAnnotation = "meta.helm.sh/release-namespace"

@@ -25,6 +25,7 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/deployment"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/replicaset"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/service"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -279,4 +280,47 @@ func validatePodsOwnerReferences(podList []corev1.Pod, replicaSetNameList []stri
 
 	return pods
 
+}
+
+func CollectMQAgentServiceDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, logger *slog.Logger) ([]string, error) {
+
+	serviceDirectory := filepath.Join(flags.OutputDir, "service")
+	if !utils.CheckIfDirectoryExist(serviceDirectory) {
+		if err := utils.CreateDirectory(serviceDirectory, 0o755); err != nil {
+			return nil, err
+		}
+	}
+
+	// collect the services list
+	serviceList, err := service.GetServiceDetailsBySelector(coreClient, utils.MQAgentServiceLabels, flags.Namespace)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching services in namespace %s: %v", flags.Namespace, err)
+	}
+
+	// filter by release name annotation
+	serviceList = utils.FilterServiceListByAnnotation(serviceList, utils.HelmReleaseNameAnnotation, flags.AgentReleaseName)
+
+	if len(serviceList) == 0 {
+		logger.Error(fmt.Sprintf("No mq-agent service found for release-name %s in namespace %s", flags.AgentReleaseName, flags.Namespace))
+		return []string{}, nil
+	}
+
+	//write service details in their respective yaml files
+	fileNameFormat := "%s-service.yaml"
+	if err := service.WriteServiceYamlsToFile(serviceList, fileNameFormat, serviceDirectory); err != nil {
+		return nil, err
+	}
+
+	// check if the directory is empty
+	if fileCount, err := utils.GetFileCountInDirectory(serviceDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("Service details: %s: Total Files: %d", serviceDirectory, fileCount))
+	}
+
+	var serviceNameList []string
+	for _, service := range serviceList {
+		serviceNameList = append(serviceNameList, service.ObjectMeta.Name)
+	}
+	return serviceNameList, nil;
 }
