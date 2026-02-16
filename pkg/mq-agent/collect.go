@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,10 @@ import (
 	"path/filepath"
 	"slices"
 
+	routeV1 "github.com/openshift/api/route/v1"
+	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/deployment"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/networkpolicy"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/replicaset"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/routes"
@@ -30,8 +33,6 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	routeV1 "github.com/openshift/api/route/v1"
-	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -295,7 +296,7 @@ func CollectMQAgentServiceDetails(coreClient kubernetes.Interface, flags utils.M
 	}
 
 	// collect the services list
-	serviceList, err := service.GetServiceDetailsBySelector(coreClient, utils.MQAgentServiceLabels, flags.Namespace)
+	serviceList, err := service.GetServiceDetailsBySelector(coreClient, utils.MQAgentManagedByLabel, flags.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching services in namespace %s: %v", flags.Namespace, err)
 	}
@@ -325,7 +326,7 @@ func CollectMQAgentServiceDetails(coreClient kubernetes.Interface, flags utils.M
 	for _, service := range serviceList {
 		serviceNameList = append(serviceNameList, service.ObjectMeta.Name)
 	}
-	return serviceNameList, nil;
+	return serviceNameList, nil
 }
 
 func CollectMQAgentRouteDetails(routeClient routeClient.Interface, serviceNameList []string, flags utils.MQAgentFlags, logger *slog.Logger) error {
@@ -343,7 +344,7 @@ func CollectMQAgentRouteDetails(routeClient routeClient.Interface, serviceNameLi
 	}
 
 	// collect the route list
-	routeList, err := routes.GetRouteDetailsBySelector(routeClient, utils.MQAgentServiceLabels, flags.Namespace)
+	routeList, err := routes.GetRouteDetailsBySelector(routeClient, utils.MQAgentManagedByLabel, flags.Namespace)
 	if err != nil {
 		return fmt.Errorf("error fetching routes in namespace %s: %v", flags.Namespace, err)
 	}
@@ -373,6 +374,47 @@ func CollectMQAgentRouteDetails(routeClient routeClient.Interface, serviceNameLi
 	}
 
 	return nil
+}
+
+func CollectMQAgentNetworkPolicies(coreClient kubernetes.Interface, flags utils.MQAgentFlags, logger *slog.Logger) error {
+
+	networkPolicyDirectory := filepath.Join(flags.OutputDir, "networkpolicy")
+
+	if !utils.CheckIfDirectoryExist(networkPolicyDirectory) {
+		if err := utils.CreateDirectory(networkPolicyDirectory, 0o775); err != nil {
+			return err
+		}
+	}
+
+	// collect the network policy list
+	networkPolicyList, err := networkpolicy.GetNetworkPolicyBySelector(coreClient, utils.MQAgentManagedByLabel, flags.Namespace)
+	if err != nil {
+		return fmt.Errorf("error fetching network-policies in %s namespace: %v", flags.Namespace, err)
+	}
+
+	// filter by release name annotation
+	networkPolicyList = utils.FilterNetworkPolicyListByAnnotation(networkPolicyList, utils.HelmReleaseNameAnnotation, flags.AgentReleaseName)
+
+	if len(networkPolicyList) == 0 {
+		logger.Error(fmt.Sprintf("No network-policies found in namespace %s", flags.Namespace))
+		return nil
+	}
+
+	// write network-policy details in their respective yaml files
+	fileNameFormat := "%s-network-policy.yaml"
+	if err := networkpolicy.WriteNetworkPolicyToFile(networkPolicyList, fileNameFormat, networkPolicyDirectory); err != nil {
+		return err
+	}
+
+	// check if the directory is empty
+	if fileCount, err := utils.GetFileCountInDirectory(networkPolicyDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("NetworkPolicy details: %s: Total Files: %d", networkPolicyDirectory, fileCount))
+	}
+
+	return nil
+
 }
 
 func filterRoutesByServices(routeList []routeV1.Route, serviceNameList []string) []routeV1.Route {

@@ -69,6 +69,8 @@ const KindCRD = "CustomResourceDefinition"
 
 const KindConfigMap = "ConfigMap"
 
+const KindNetworkPolicy = "NetworkPolicy"
+
 const QmgrGroup = "mq.ibm.com"
 
 const QmgrVersion = "v1beta1"
@@ -147,7 +149,7 @@ const QueueManagerStatusPending = "Pending"
 
 const MQAgentLabels = "app.kubernetes.io/managed-by=Helm,app.kubernetes.io/component=integration"
 
-const MQAgentServiceLabels = "app.kubernetes.io/managed-by=Helm"
+const MQAgentManagedByLabel = "app.kubernetes.io/managed-by=Helm"
 
 const HelmReleaseNameAnnotation = "meta.helm.sh/release-name"
 

@@ -24,9 +24,10 @@ import (
 	"strings"
 	"time"
 
+	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	routev1 "github.com/openshift/api/route/v1"
+	networkv1 "k8s.io/api/networking/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -392,7 +393,7 @@ func FilterReplicasetListByAnnotation(replicasetList []appsv1.ReplicaSet, annota
 }
 
 func FilterServiceListByAnnotation(servicesList []corev1.Service, annotationKey string, annotationValue string) []corev1.Service {
-	
+
 	var services []corev1.Service
 
 	for _, service := range servicesList {
@@ -421,4 +422,21 @@ func FilterRouteListByAnnotation(routeList []routev1.Route, annotationKey string
 	}
 
 	return routes
+}
+
+func FilterNetworkPolicyListByAnnotation(networkPolicyList []networkv1.NetworkPolicy, annotationKey, annotationValue string) []networkv1.NetworkPolicy {
+
+	var filteredNetworkPolicyList []networkv1.NetworkPolicy
+
+	for _, networkPolicy := range networkPolicyList {
+
+		annotations := networkPolicy.Annotations
+
+		if value, ok := annotations[annotationKey]; ok && value == annotationValue {
+			filteredNetworkPolicyList = append(filteredNetworkPolicyList, networkPolicy)
+		}
+	}
+
+	return filteredNetworkPolicyList
+
 }

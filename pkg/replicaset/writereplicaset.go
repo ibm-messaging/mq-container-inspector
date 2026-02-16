@@ -29,7 +29,7 @@ func WriteReplicaSetToFile(replicasetList []appsv1.ReplicaSet, fileNameFormat, o
 		}
 
 		if err := os.WriteFile(fileName, data, 0o600); err != nil {
-			return fmt.Errorf("error while writing %s deployment data in the yaml file: %v", replicaset.ObjectMeta.Name, err)
+			return fmt.Errorf("error while writing %s replicaset data in the yaml file: %v", replicaset.ObjectMeta.Name, err)
 		}
 
 	}
