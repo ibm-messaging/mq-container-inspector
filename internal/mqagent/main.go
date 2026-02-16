@@ -37,6 +37,11 @@ func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {
 		return fmt.Errorf("error building core client from config: %v", err)
 	}
 
+	routeClient, err := kubeclient.BuildRouteClientFromConfig(cfg)
+	if err != nil {
+		return fmt.Errorf("error building route client from config: %v", err)
+	}
+
 	// check if the provided namespace exists on the cluster
 	if err := validations.ValidateNamespace(coreClient, flags.Namespace); err != nil {
 		return err
@@ -101,12 +106,22 @@ func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {
 	logger.Info("---- Collecting Service details ----")
 	fmt.Print("Collecting Service details...")
 	mustGatherTime = time.Now()
-	_, err = mqagent.CollectMQAgentServiceDetails(coreClient, flags, logger)
+	serviceNameList, err := mqagent.CollectMQAgentServiceDetails(coreClient, flags, logger)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
 	logger.Info("---- Service details collected ----")
+
+	logger.Info("---- Collecting Route details ----")
+	fmt.Print("Collecting Route details...")
+	mustGatherTime = time.Now()
+	err = mqagent.CollectMQAgentRouteDetails(routeClient, serviceNameList, flags, logger)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
+	logger.Info("---- Route details collected ----")
 
 	// delete the empty directories
 	if err := utils.DeleteEmptyDirectories(flags.OutputDir, logger); err != nil {

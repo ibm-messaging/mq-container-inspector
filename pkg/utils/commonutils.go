@@ -26,6 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -404,4 +405,20 @@ func FilterServiceListByAnnotation(servicesList []corev1.Service, annotationKey 
 	}
 
 	return services
+}
+
+func FilterRouteListByAnnotation(routeList []routev1.Route, annotationKey string, annotationValue string) []routev1.Route {
+
+	var routes []routev1.Route
+
+	for _, route := range routeList {
+		annotations := route.Annotations
+
+		// check if release-name annotation matches
+		if value, ok := annotations[annotationKey]; ok && value == annotationValue {
+			routes = append(routes, route)
+		}
+	}
+
+	return routes
 }

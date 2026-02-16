@@ -25,10 +25,13 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/deployment"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/replicaset"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/routes"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/service"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	routeV1 "github.com/openshift/api/route/v1"
+	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -323,4 +326,65 @@ func CollectMQAgentServiceDetails(coreClient kubernetes.Interface, flags utils.M
 		serviceNameList = append(serviceNameList, service.ObjectMeta.Name)
 	}
 	return serviceNameList, nil;
+}
+
+func CollectMQAgentRouteDetails(routeClient routeClient.Interface, serviceNameList []string, flags utils.MQAgentFlags, logger *slog.Logger) error {
+
+	if len(serviceNameList) == 0 {
+		logger.Error(fmt.Sprintf("Skipping Route collection in %s namespace as the service list is empty", flags.Namespace))
+		return nil
+	}
+
+	routeDirectory := filepath.Join(flags.OutputDir, "route")
+	if !utils.CheckIfDirectoryExist(routeDirectory) {
+		if err := utils.CreateDirectory(routeDirectory, 0o755); err != nil {
+			return err
+		}
+	}
+
+	// collect the route list
+	routeList, err := routes.GetRouteDetailsBySelector(routeClient, utils.MQAgentServiceLabels, flags.Namespace)
+	if err != nil {
+		return fmt.Errorf("error fetching routes in namespace %s: %v", flags.Namespace, err)
+	}
+
+	// filter by release name annotation
+	routeList = utils.FilterRouteListByAnnotation(routeList, utils.HelmReleaseNameAnnotation, flags.AgentReleaseName)
+
+	// filter routes to only include those pointing to the identified services earlier
+	routeList = filterRoutesByServices(routeList, serviceNameList)
+
+	if len(routeList) == 0 {
+		logger.Error(fmt.Sprintf("No routes found in namespace %s", flags.Namespace))
+		return nil
+	}
+
+	// write route details in their respective yaml files
+	fileNameFormat := "%s-route.yaml"
+	if err := routes.WriteRouteDetailsBySelectorToFile(routeList, fileNameFormat, routeDirectory); err != nil {
+		return err
+	}
+
+	// check if the directory is empty
+	if fileCount, err := utils.GetFileCountInDirectory(routeDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("Route details: %s: Total Files: %d", routeDirectory, fileCount))
+	}
+
+	return nil
+}
+
+func filterRoutesByServices(routeList []routeV1.Route, serviceNameList []string) []routeV1.Route {
+
+	var filteredRoutes []routeV1.Route
+
+	for _, route := range routeList {
+		if route.Spec.To.Name != "" && slices.Contains(serviceNameList, route.Spec.To.Name) {
+			filteredRoutes = append(filteredRoutes, route)
+		}
+	}
+
+	return filteredRoutes
+
 }
