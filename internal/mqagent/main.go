@@ -25,6 +25,7 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/kubeclient"
 	mqagent "github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/mq-agent"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/tarzip"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/validations"
 	"k8s.io/client-go/rest"
 )
@@ -146,6 +147,18 @@ func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {
 	// delete the empty directories
 	if err := utils.DeleteEmptyDirectories(flags.OutputDir, logger); err != nil {
 		logger.Error(err.Error())
+	}
+
+	// if skip-tar is disabled, then tar the mq-agent must-gather output
+	if !flags.SkipTar {
+		fmt.Print("Compressing the logs...")
+		mustGatherStartTime := time.Now()
+
+		if err := tarzip.TarZipFolder(flags.OutputDir); err != nil {
+			return fmt.Errorf("error tar zipping the collected mq-agent must-gather at path %s: %v", flags.OutputDir, err)
+		}
+
+		fmt.Printf("MQ-Agent Must Gathers archived. Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 	}
 
 	fmt.Printf("MQ-Agent must-gather tool run completed... Took: %v\n", time.Since(mqAgentMustGatherToolStartTime).Round(time.Millisecond))
