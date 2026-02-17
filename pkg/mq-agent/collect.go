@@ -30,6 +30,7 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/replicaset"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/routes"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/service"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/serviceaccount"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -429,4 +430,40 @@ func filterRoutesByServices(routeList []routeV1.Route, serviceNameList []string)
 
 	return filteredRoutes
 
+}
+
+
+func CollectMQAgentServiceAccountDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, logger *slog.Logger) error {
+
+	serviceAccountDirectory := filepath.Join(flags.OutputDir, "service-account")
+	if !utils.CheckIfDirectoryExist(serviceAccountDirectory) {
+		if err := utils.CreateDirectory(serviceAccountDirectory, 0o755); err != nil {
+			return err
+		}
+	}
+
+	// collect the serviceAccount list
+	serviceAccountList, err := serviceaccount.GetServiceAccountDetailsBySelector(coreClient, utils.MQAgentManagedByLabel, flags.Namespace)
+
+	if err != nil {
+		return fmt.Errorf("error fetching services accounts in namespace %s: %v", flags.Namespace, err)
+	}
+
+	// filter by release name annotation
+	serviceAccountList = utils.FilterServiceAccountListByAnnotation(serviceAccountList, utils.HelmReleaseNameAnnotation, flags.AgentReleaseName)
+
+	// write service account details in their respective yaml files
+	fileNameFormat := "%s-service-account.yaml"
+	if err := serviceaccount.WriteServiceAccountYamlsToFile(serviceAccountList, fileNameFormat, serviceAccountDirectory); err != nil {
+		return err
+	}
+
+	// check if the directory is empty
+	if fileCount, err := utils. GetFileCountInDirectory(serviceAccountDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("Service-Account details: %s Total Files: %d", serviceAccountDirectory, fileCount))
+	}
+
+	return nil
 }

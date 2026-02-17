@@ -440,3 +440,19 @@ func FilterNetworkPolicyListByAnnotation(networkPolicyList []networkv1.NetworkPo
 	return filteredNetworkPolicyList
 
 }
+
+func FilterServiceAccountListByAnnotation(serviceAccountList []corev1.ServiceAccount, annotationKey string, annotationValue string) []corev1.ServiceAccount {
+
+	var serviceAccounts []corev1.ServiceAccount
+
+	for _, serviceAccount := range serviceAccountList {
+		annotations := serviceAccount.Annotations
+
+		// check if release-name annotation matches
+		if value, ok := annotations[annotationKey]; ok && value == annotationValue {
+			serviceAccounts = append(serviceAccounts, serviceAccount)
+		}
+	}
+
+	return serviceAccounts
+}

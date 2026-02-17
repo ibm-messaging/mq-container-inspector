@@ -133,6 +133,16 @@ func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {
 	fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
 	logger.Info("---- Network Policies details collected ----")
 
+	logger.Info("---- Collecting ServiceAccount details ----")
+	fmt.Print("Collecting ServiceAccount details ...")
+	mustGatherTime = time.Now()
+	err = mqagent.CollectMQAgentServiceAccountDetails(coreClient, flags, logger)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
+	logger.Info("---- ServiceAccount details collected ----")
+
 	// delete the empty directories
 	if err := utils.DeleteEmptyDirectories(flags.OutputDir, logger); err != nil {
 		logger.Error(err.Error())

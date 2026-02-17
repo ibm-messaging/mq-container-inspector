@@ -49,6 +49,8 @@ const KindIngress = "Ingress"
 
 const KindService = "Service"
 
+const KindServiceAccount = "ServiceAccount"
+
 const KindPVC = "PersistentVolumeClaim"
 
 const KindDeployment = "Deployment"
