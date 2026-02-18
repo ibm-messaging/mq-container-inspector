@@ -21,9 +21,11 @@ import (
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+
+	"k8s.io/client-go/kubernetes"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 // GetPVCDetailsBySelector retrieves all pvc's in a given namespace that match the provided label selector.

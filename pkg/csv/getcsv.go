@@ -20,10 +20,12 @@ import (
 	"strings"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetOperatorCSVBySelector retrieves all operator csv's in a given namespace that match the provided label selector.

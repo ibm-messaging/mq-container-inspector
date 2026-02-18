@@ -20,13 +20,15 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	controllerrevisions "github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/controller_revisions"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/statefulset"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+
+	"k8s.io/client-go/kubernetes"
+
+	controllerrevisions "github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/controller_revisions"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 func gatherStatefulSetToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {

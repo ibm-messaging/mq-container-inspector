@@ -18,12 +18,13 @@ package kubeclient
 import (
 	"fmt"
 
-	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 )
 
 func BuildKubeConfig(kubeconfigPath string) (*rest.Config, error) {

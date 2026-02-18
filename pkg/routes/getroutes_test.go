@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"testing"
 
-	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/openshift/client-go/route/clientset/versioned/fake"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/test"
+
+	routeV1 "github.com/openshift/api/route/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

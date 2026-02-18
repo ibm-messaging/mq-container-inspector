@@ -23,8 +23,10 @@ import (
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/kubernetes"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) ([]string, error) {

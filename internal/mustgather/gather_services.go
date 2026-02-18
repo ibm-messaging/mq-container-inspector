@@ -22,8 +22,10 @@ import (
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/service"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/kubernetes"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func gatherServicesToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {

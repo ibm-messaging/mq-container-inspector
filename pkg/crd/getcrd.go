@@ -20,9 +20,11 @@ import (
 	"context"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetCRDDetailsByName retrieves the CRD details with the specified name.

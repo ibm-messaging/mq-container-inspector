@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025,2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,8 +25,10 @@ import (
 	"time"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
+
 	"sigs.k8s.io/yaml"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // WritePodDetailsToFile writes the details of the given pods to a text file.

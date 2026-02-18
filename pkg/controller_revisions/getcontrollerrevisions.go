@@ -20,9 +20,11 @@ import (
 	"context"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+
+	"k8s.io/client-go/kubernetes"
+
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 // GetControllerRevisionsBySelector retrieves all Controller revisions in a given namespace that match the provided label selector.

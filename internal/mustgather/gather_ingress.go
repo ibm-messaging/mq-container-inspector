@@ -24,9 +24,11 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/ingress"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/service"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+
+	"k8s.io/client-go/kubernetes"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 func gatherIngressToFiles(coreClient kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {

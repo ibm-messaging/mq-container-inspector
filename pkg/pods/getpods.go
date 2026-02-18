@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025,2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,12 +21,15 @@ import (
 	"log/slog"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	describe "k8s.io/kubectl/pkg/describe"
 )
 

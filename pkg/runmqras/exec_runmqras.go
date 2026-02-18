@@ -24,10 +24,12 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/container"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // ExecRunmqrasBySelector exec the runmqras command for every pod in a given namespace that match the provided label selector.

@@ -21,8 +21,10 @@ import (
 	"os"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	networkV1 "k8s.io/api/networking/v1"
+
 	"sigs.k8s.io/yaml"
+
+	networkV1 "k8s.io/api/networking/v1"
 )
 
 // WriteNetworkPolicyToFile writes each NetworkPolicy details to a separate YAML file.

@@ -19,9 +19,10 @@ import (
 	"fmt"
 	"os"
 
-	routeV1 "github.com/openshift/api/route/v1"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	"sigs.k8s.io/yaml"
+
+	routeV1 "github.com/openshift/api/route/v1"
 )
 
 // WriteRouteDetailsBySelectorToFile writes the Routes details to a separate YAML file.

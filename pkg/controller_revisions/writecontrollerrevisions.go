@@ -21,8 +21,10 @@ import (
 	"os"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	appsv1 "k8s.io/api/apps/v1"
+
 	"sigs.k8s.io/yaml"
+
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 // WriteControllerRevisionYamlsToFile writes the Controller revisions as a list to a single file.

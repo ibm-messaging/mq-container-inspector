@@ -19,8 +19,10 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/client-go/kubernetes"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func DoesNamespacesExist(client kubernetes.Interface, namespace string) (bool, error) {

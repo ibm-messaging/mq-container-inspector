@@ -24,11 +24,12 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/client-go/rest"
+
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkv1 "k8s.io/api/networking/v1"
-	"k8s.io/client-go/rest"
 )
 
 type MustGatherFlags struct {

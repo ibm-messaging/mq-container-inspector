@@ -20,9 +20,11 @@ import (
 	"context"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+
+	"k8s.io/client-go/kubernetes"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 // GetServiceAccountDetailsBySelector retrieves all service-accounts in a given namespace that match the provided label selector.
@@ -44,4 +46,3 @@ func GetServiceAccountDetailsBySelector(client kubernetes.Interface, selector, n
 
 	return serviceAccountList.Items, err
 }
-

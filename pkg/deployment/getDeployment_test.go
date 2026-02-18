@@ -21,11 +21,13 @@ import (
 	"testing"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/test"
-	appsv1 "k8s.io/api/apps/v1"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 const (

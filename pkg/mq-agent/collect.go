@@ -22,8 +22,6 @@ import (
 	"path/filepath"
 	"slices"
 
-	routeV1 "github.com/openshift/api/route/v1"
-	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/deployment"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/networkpolicy"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
@@ -32,9 +30,13 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/service"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/serviceaccount"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+
+	"k8s.io/client-go/kubernetes"
+
+	routeV1 "github.com/openshift/api/route/v1"
+	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 func CollectMQAgentDeploymentDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, logger *slog.Logger) ([]string, error) {
@@ -432,7 +434,6 @@ func filterRoutesByServices(routeList []routeV1.Route, serviceNameList []string)
 
 }
 
-
 func CollectMQAgentServiceAccountDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, logger *slog.Logger) error {
 
 	serviceAccountDirectory := filepath.Join(flags.OutputDir, "service-account")
@@ -459,7 +460,7 @@ func CollectMQAgentServiceAccountDetails(coreClient kubernetes.Interface, flags 
 	}
 
 	// check if the directory is empty
-	if fileCount, err := utils. GetFileCountInDirectory(serviceAccountDirectory); err != nil {
+	if fileCount, err := utils.GetFileCountInDirectory(serviceAccountDirectory); err != nil {
 		logger.Error(err.Error())
 	} else {
 		logger.Info(fmt.Sprintf("Service-Account details: %s Total Files: %d", serviceAccountDirectory, fileCount))

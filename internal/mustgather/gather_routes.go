@@ -20,14 +20,15 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	routeV1 "github.com/openshift/api/route/v1"
-	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/kubeclient"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/routes"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/service"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	routeV1 "github.com/openshift/api/route/v1"
+	routeClient "github.com/openshift/client-go/route/clientset/versioned"
 )
 
 func gatherRoutesToFiles(cfg *rest.Config, coreClient kubernetes.Interface, routeClient routeClient.Interface, flags utils.MustGatherFlags, logger *slog.Logger) error {

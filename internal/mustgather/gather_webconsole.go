@@ -23,9 +23,11 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/container"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // Copies the MQ Webconsole console.log and messages.log to the must gather OutputDir

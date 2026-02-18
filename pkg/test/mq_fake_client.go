@@ -18,18 +18,21 @@ package test
 import (
 	"fmt"
 
-	routeV1 "github.com/openshift/api/route/v1"
-	routefake "github.com/openshift/client-go/route/clientset/versioned/fake"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
+
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	routeV1 "github.com/openshift/api/route/v1"
+	routefake "github.com/openshift/client-go/route/clientset/versioned/fake"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

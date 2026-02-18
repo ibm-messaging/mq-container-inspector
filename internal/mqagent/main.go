@@ -23,11 +23,12 @@ import (
 	"time"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/kubeclient"
-	mqagent "github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/mq-agent"
-	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/tarzip"
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/validations"
 	"k8s.io/client-go/rest"
+
+	mqagent "github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/mq-agent"
 )
 
 func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {

@@ -20,8 +20,10 @@ import (
 	"os"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
+
 	"sigs.k8s.io/yaml"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // WritePVCYamlsToFile writes each pvc's details to a separate YAML file.

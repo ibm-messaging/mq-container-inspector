@@ -18,9 +18,10 @@ package routes
 import (
 	"context"
 
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
+
 	routeV1 "github.com/openshift/api/route/v1"
 	routeClient "github.com/openshift/client-go/route/clientset/versioned"
-	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
