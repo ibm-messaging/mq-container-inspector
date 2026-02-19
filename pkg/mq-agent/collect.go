@@ -256,7 +256,7 @@ func CollectMQAgentPodDetails(coreClient kubernetes.Interface, flags utils.MQAge
 	if fileCount, err := utils.GetFileCountInDirectory(podDirectory); err != nil {
 		logger.Error(err.Error())
 	} else {
-		logger.Info(fmt.Sprintf("Replicaset details: %s: Total Files: %d", podDirectory, fileCount))
+		logger.Info(fmt.Sprintf("Pod details: %s: Total Files: %d", podDirectory, fileCount))
 	}
 
 	return nil
