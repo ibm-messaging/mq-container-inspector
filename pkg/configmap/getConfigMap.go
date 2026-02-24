@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025,2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -42,6 +42,25 @@ func GetConfigMapDetailsByName(client kubernetes.Interface, name, namespace stri
 	configMap.TypeMeta.Kind = utils.KindConfigMap
 
 	return configMap, nil
+}
+
+// GetConfigMapDetailsBySelector gets the configmap details by label selector in a given namespace.
+// Parameters:
+//   - client: the Kubernetes client used to interact with the cluster.
+//   - selector: he label selector used to filter the configmap's
+//   - namespace: the namespace in which to search for the configmap.
+func GetConfigMapDetailsBySelector(client kubernetes.Interface, selector, namespace string) ([]corev1.ConfigMap, error) {
+	configMap, err := client.CoreV1().ConfigMaps(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: selector,
+	})
+
+	// the configmap get API returns the configmap with the apiVersion and kind field as empty, so setting them explicitly
+	for index := range configMap.Items {
+		configMap.Items[index].TypeMeta.APIVersion = utils.ApiVersionV1
+		configMap.Items[index].TypeMeta.Kind = utils.KindConfigMap
+	}
+
+	return configMap.Items, err
 }
 
 // DeleteConfigMapByName delete's the configmap by name in a given namespace.

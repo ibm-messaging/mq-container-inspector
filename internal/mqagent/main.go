@@ -78,7 +78,7 @@ func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {
 	logger.Info("---- Collecting Deployment details ----")
 	fmt.Print("Collecting Deployment details...")
 	mustGatherTime := time.Now()
-	deploymentNameList, err := mqagent.CollectMQAgentDeploymentDetails(coreClient, flags, logger)
+	deploymentList, err := mqagent.CollectMQAgentDeploymentDetails(coreClient, flags, logger)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {
 	logger.Info("---- Collecting ReplicaSet details ----")
 	fmt.Print("Collecting ReplicaSet details...")
 	mustGatherTime = time.Now()
-	replicaSetNameList, err := mqagent.CollectMQAgentReplicaSetDetails(coreClient, flags, deploymentNameList, logger)
+	replicaSetNameList, err := mqagent.CollectMQAgentReplicaSetDetails(coreClient, flags, deploymentList, logger)
 	if err != nil {
 		return err
 	}
@@ -98,12 +98,22 @@ func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {
 	logger.Info("---- Collecting Pod details(This may take some time) ----")
 	fmt.Print("Collecting Pod details(This may take some time)...")
 	mustGatherTime = time.Now()
-	err = mqagent.CollectMQAgentPodDetails(coreClient, flags, replicaSetNameList, logger)
+	podList, err := mqagent.CollectMQAgentPodDetails(coreClient, flags, replicaSetNameList, logger)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
 	logger.Info("---- Pod details collected ----")
+
+	logger.Info("---- Collecting ConfigMap details ----")
+	fmt.Print("Collecting ConfigMap details...")
+	mustGatherTime = time.Now()
+	err = mqagent.CollectMQAgentConfigMapDetails(coreClient, podList, deploymentList, flags, logger)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
+	logger.Info("---- ConfigMap details collected ----")
 
 	logger.Info("---- Collecting Service details ----")
 	fmt.Print("Collecting Service details...")

@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/configmap"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/deployment"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/networkpolicy"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/pods"
@@ -39,7 +40,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func CollectMQAgentDeploymentDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, logger *slog.Logger) ([]string, error) {
+func CollectMQAgentDeploymentDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, logger *slog.Logger) ([]appsv1.Deployment, error) {
 
 	deploymentDirectory := filepath.Join(flags.OutputDir, "deployment")
 	if !utils.CheckIfDirectoryExist(deploymentDirectory) {
@@ -57,7 +58,7 @@ func CollectMQAgentDeploymentDetails(coreClient kubernetes.Interface, flags util
 	deploymentList = utils.FilterDeploymentListByAnnotation(deploymentList, utils.HelmReleaseNameAnnotation, flags.AgentReleaseName)
 	if len(deploymentList) == 0 {
 		logger.Error(fmt.Sprintf("No mq-agent deployment found for release-name %s in namespace %s", flags.AgentReleaseName, flags.Namespace))
-		return []string{}, nil
+		return nil, nil
 	}
 
 	// collect deployment events
@@ -85,18 +86,13 @@ func CollectMQAgentDeploymentDetails(coreClient kubernetes.Interface, flags util
 		logger.Info(fmt.Sprintf("Deployment details: %s: Total Files: %d", deploymentDirectory, fileCount))
 	}
 
-	var deploymentNameList []string
-	for _, deployment := range deploymentList {
-		deploymentNameList = append(deploymentNameList, deployment.ObjectMeta.Name)
-	}
-
-	return deploymentNameList, nil
+	return deploymentList, nil
 
 }
 
-func CollectMQAgentReplicaSetDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, deploymentNameList []string, logger *slog.Logger) ([]string, error) {
+func CollectMQAgentReplicaSetDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, deploymentList []appsv1.Deployment, logger *slog.Logger) ([]string, error) {
 
-	if len(deploymentNameList) == 0 {
+	if len(deploymentList) == 0 {
 		logger.Error(fmt.Sprintf("Skipping ReplicaSet collection in %s namespace as the deployment list is empty", flags.Namespace))
 		return []string{}, nil
 	}
@@ -121,6 +117,10 @@ func CollectMQAgentReplicaSetDetails(coreClient kubernetes.Interface, flags util
 	}
 
 	// remove any replicaSets which are not owned by a deployment in the deploymentList
+	var deploymentNameList []string
+	for _, deployment := range deploymentList {
+		deploymentNameList = append(deploymentNameList, deployment.ObjectMeta.Name)
+	}
 	replicaSetList = filterReplicasetListByOwnerReferences(replicaSetList, deploymentNameList)
 
 	// collect replicaSet events
@@ -182,24 +182,24 @@ func filterReplicasetListByOwnerReferences(replicaSetList []appsv1.ReplicaSet, d
 
 }
 
-func CollectMQAgentPodDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, replicasetNameList []string, logger *slog.Logger) error {
+func CollectMQAgentPodDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, replicasetNameList []string, logger *slog.Logger) ([]corev1.Pod, error) {
 
 	if len(replicasetNameList) == 0 {
 		logger.Error(fmt.Sprintf("Skipping Pod collection in %s namespace as the replicaset list is empty", flags.Namespace))
-		return nil
+		return nil, nil
 	}
 
 	podDirectory := filepath.Join(flags.OutputDir, "pods")
 	if !utils.CheckIfDirectoryExist(podDirectory) {
 		if err := utils.CreateDirectory(podDirectory, 0o775); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	// collect the pods
 	podList, err := pods.GetPodsBySelector(coreClient, utils.MQAgentLabels, flags.Namespace)
 	if err != nil {
-		return fmt.Errorf("error fetching pods details in namespace %s: %v", flags.Namespace, err)
+		return nil, fmt.Errorf("error fetching pods details in namespace %s: %v", flags.Namespace, err)
 	}
 
 	podList = validatePodsOwnerReferences(podList, replicasetNameList)
@@ -213,43 +213,43 @@ func CollectMQAgentPodDetails(coreClient kubernetes.Interface, flags utils.MQAge
 	// fetch the pod events
 	podEvents, err := pods.GetPodEvents(coreClient, podList, flags.Namespace)
 	if err != nil {
-		return fmt.Errorf("error fetching pods events in namespace %s: %v", flags.Namespace, err)
+		return nil, fmt.Errorf("error fetching pods events in namespace %s: %v", flags.Namespace, err)
 	}
 
 	// fetch the pod describe logs
 	podDescribeLogs, err := pods.GetPodDescribeLogs(coreClient, podList, flags.Namespace)
 	if err != nil {
-		return fmt.Errorf("error fetching pods describe logs in namespace %s: %v", flags.Namespace, err)
+		return nil, fmt.Errorf("error fetching pods describe logs in namespace %s: %v", flags.Namespace, err)
 	}
 
 	// write the pod details to its text file
 	fileNameFormat := "pod-details.txt"
 	if err := pods.WritePodDetailsToFile(podList, fileNameFormat, podDirectory); err != nil {
-		return err
+		return nil, err
 	}
 
 	// write the pod details to their respective yamls
 	fileNameFormat = "%s.yaml"
 	if err := pods.WritePodYamlsToFile(podList, fileNameFormat, podDirectory); err != nil {
-		return err
+		return nil, err
 	}
 
 	// write the pod logs to their respective files
 	fileNameFormat = "[%s]-%s-%s-pod-log.txt"
 	if err := pods.WritePodAllContainerLogsToFile(podLogsMap, fileNameFormat, podDirectory, logger); err != nil {
-		return err
+		return nil, err
 	}
 
 	// write the pod events to their respective files
 	fileNameFormat = "%s-pod-events.txt"
 	if err := pods.WritePodEventsToFile(podEvents, fileNameFormat, podDirectory); err != nil {
-		return err
+		return nil, err
 	}
 
 	// write the pod describe logs to their respective files
 	fileNameFormat = "%s-describe-log.txt"
 	if err := pods.WritePodDescribeLogsToFile(podDescribeLogs, fileNameFormat, podDirectory); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check if the directory is empty
@@ -259,7 +259,7 @@ func CollectMQAgentPodDetails(coreClient kubernetes.Interface, flags utils.MQAge
 		logger.Info(fmt.Sprintf("Pod details: %s: Total Files: %d", podDirectory, fileCount))
 	}
 
-	return nil
+	return podList, nil
 }
 
 func validatePodsOwnerReferences(podList []corev1.Pod, replicaSetNameList []string) []corev1.Pod {
@@ -287,6 +287,114 @@ func validatePodsOwnerReferences(podList []corev1.Pod, replicaSetNameList []stri
 
 	return pods
 
+}
+
+func CollectMQAgentConfigMapDetails(coreClient kubernetes.Interface, podList []corev1.Pod, deploymentList []appsv1.Deployment, flags utils.MQAgentFlags, logger *slog.Logger) error {
+
+	configMapDirectory := filepath.Join(flags.OutputDir, "configmap")
+	if !utils.CheckIfDirectoryExist(configMapDirectory) {
+		if err := utils.CreateDirectory(configMapDirectory, 0o775); err != nil {
+			return err
+		}
+	}
+
+	var configMapList []corev1.ConfigMap
+	var err error
+
+	if len(podList) != 0 {
+		configMapList = getConfigMapDetailsFromPods(coreClient, podList, flags.Namespace, logger)
+	} else if len(deploymentList) != 0 {
+		configMapList = getConfigMapDetailsFromDeployments(coreClient, deploymentList, flags.Namespace, logger)
+	} else {
+		configMapList, err = configmap.GetConfigMapDetailsBySelector(coreClient, utils.MQAgentManagedByLabel, flags.Namespace)
+		if err != nil {
+			logger.Info(fmt.Sprintf("Error collecting ConfigMap details by %s label-selector in %s namespace", utils.MQAgentManagedByLabel, flags.Namespace))
+			return nil
+		}
+
+		configMapList = utils.FilterConfigMapListByAnnotation(configMapList, utils.HelmReleaseNameAnnotation, flags.AgentReleaseName)
+
+	}
+
+	if len(configMapList) == 0 {
+		logger.Info(fmt.Sprintf("No configMap found for %s mq-agent release in %s namespace", flags.AgentReleaseName, flags.Namespace))
+		return nil
+	}
+
+	// write the configmaps in their respective yaml files
+	fileNameFormat := "%s.yaml"
+	if err := configmap.WriteConfigMapYamlsToFile(configMapList, configMapDirectory, fileNameFormat, logger); err != nil {
+		logger.Error(err.Error())
+	}
+
+	// check if the directory is empty
+	if fileCount, err := utils.GetFileCountInDirectory(configMapDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("ConfigMap details: %s: Total Files: %d", configMapDirectory, fileCount))
+	}
+
+	return nil
+
+}
+
+func getConfigMapDetailsFromPods(coreClient kubernetes.Interface, podList []corev1.Pod, namespace string, logger *slog.Logger) []corev1.ConfigMap {
+
+	var configMapList []corev1.ConfigMap
+	var configMapNames []string
+
+	for _, pod := range podList {
+		for _, volume := range pod.Spec.Volumes {
+			if volume.ConfigMap != nil {
+				configMapNames = append(configMapNames, volume.ConfigMap.Name)
+			}
+		}
+	}
+
+	if len(configMapNames) == 0 {
+		return configMapList
+	}
+
+	for _, configMapName := range configMapNames {
+		if configMap, err := configmap.GetConfigMapDetailsByName(coreClient, configMapName, namespace); err != nil {
+			logger.Error(err.Error())
+			continue
+		} else {
+			configMapList = append(configMapList, *configMap)
+		}
+	}
+
+	return configMapList
+
+}
+
+func getConfigMapDetailsFromDeployments(coreClient kubernetes.Interface, deploymentList []appsv1.Deployment, namespace string, logger *slog.Logger) []corev1.ConfigMap {
+
+	var configMapList []corev1.ConfigMap
+	var configMapNames []string
+
+	for _, deployment := range deploymentList {
+		for _, volume := range deployment.Spec.Template.Spec.Volumes {
+			if volume.ConfigMap != nil {
+				configMapNames = append(configMapNames, volume.ConfigMap.Name)
+			}
+		}
+	}
+
+	if len(configMapNames) == 0 {
+		return configMapList
+	}
+
+	for _, configMapName := range configMapNames {
+		if configMap, err := configmap.GetConfigMapDetailsByName(coreClient, configMapName, namespace); err != nil {
+			logger.Error(err.Error())
+			continue
+		} else {
+			configMapList = append(configMapList, *configMap)
+		}
+	}
+
+	return configMapList
 }
 
 func CollectMQAgentServiceDetails(coreClient kubernetes.Interface, flags utils.MQAgentFlags, logger *slog.Logger) ([]string, error) {

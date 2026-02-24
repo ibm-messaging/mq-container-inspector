@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025,2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 //   - configMapList:        the list of configmap's whose details will be written.
 //   - fileNameFormat: the format string used to name each file; must contain one "%s", which will be replaced by the configmap name.
 //   - outputDir:      the directory in which the YAML files will be created.
-func WriteConfigMapYamlsToFile(configMapList []*corev1.ConfigMap, outputDir, fileNameFormat string, logger *slog.Logger) {
+func WriteConfigMapYamlsToFile(configMapList []corev1.ConfigMap, outputDir, fileNameFormat string, logger *slog.Logger) error {
 
 	for _, configmap := range configMapList {
 
@@ -40,15 +40,15 @@ func WriteConfigMapYamlsToFile(configMapList []*corev1.ConfigMap, outputDir, fil
 
 		data, err := yaml.Marshal(configmap)
 		if err != nil {
-			logger.Info(fmt.Sprintf("error while marshalling yaml for configmap %s: %v", configmap.ObjectMeta.Name, err))
-			continue
+			return fmt.Errorf("error while marshalling yaml for configmap %s: %v", configmap.ObjectMeta.Name, err)
 		}
 
 		if err := os.WriteFile(fileName, data, 0o600); err != nil {
-			logger.Info(fmt.Sprintf("error while writing configmap %s data in the yaml file: %v", configmap.ObjectMeta.Name, err))
-			continue
+			return fmt.Errorf("error while writing configmap %s data in the yaml file: %v", configmap.ObjectMeta.Name, err)
 		}
 
 	}
+
+	return nil
 
 }

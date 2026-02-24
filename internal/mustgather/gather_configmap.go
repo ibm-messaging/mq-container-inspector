@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025,2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ func gatherConfigMapsToFiles(client kubernetes.Interface, dynamicClient dynamic.
 	}
 
 	// fetch configmap details from configmap names
-	var configMaps []*corev1.ConfigMap
+	var configMaps []corev1.ConfigMap
 
 	for _, configMapName := range configMapNames {
 
@@ -59,14 +59,16 @@ func gatherConfigMapsToFiles(client kubernetes.Interface, dynamicClient dynamic.
 			logger.Info(fmt.Sprintf("Error fetching config-map %s in %s namespace: %v", configMapName, flags.QueueManagerNamespace, err))
 			continue
 		}
-		configMaps = append(configMaps, configMap)
+		configMaps = append(configMaps, *configMap)
 	}
 
 	if len(configMaps) != 0 {
 
 		// write configmap to their respective yamls
 		fileNameFormat := "%s.yaml"
-		configmap.WriteConfigMapYamlsToFile(configMaps, configMapDirectory, fileNameFormat, logger)
+		if err := configmap.WriteConfigMapYamlsToFile(configMaps, configMapDirectory, fileNameFormat, logger); err != nil {
+			logger.Error(err.Error())
+		}
 	}
 
 	if fileCount, err := utils.GetFileCountInDirectory(configMapDirectory); err != nil {
