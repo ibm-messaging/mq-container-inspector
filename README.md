@@ -6,8 +6,9 @@ A collection of tools for interacting with IBM® MQ queue managers running in co
 
 The following tools are currently available:
 
- - [MustGather](#mustgather-usage) - Collect diagnostic information required when opening a support case with IBM® MQ containers Support.
+ - [MustGather](#mustgather-usage) - Collect diagnostic information required when opening a support case for MQ in containers with IBM® Support.
  - [PVCTool](#pvctool-usage) - Provides access to the files on a queue manager PVC where a remote shell cannot be established to the queue manager pod. This might be because the pod is in an Error or CrashLoopBackOff state.
+ - [MQ-Agent](#mqagent-usage) - Collect diagnostic information required when opening a support case for the MQ agent with IBM® Support.
 
 ## Install Instructions
 
@@ -116,6 +117,18 @@ By default, the output is saved inside a `PVC_Inspector_<timestamp>` folder in t
 
 For full usage and output, see the [PVCTool Usage Guide](https://github.com/ibm-messaging/mq-container-inspector/tree/main/docs/PVCToolUsage.md)
 
+## MQAgent Usage
+
+After the binary has been built or installed, you can run the MQ Agent MustGather tool with the following command:
+
+`mq-container-inspector mq-agent --agent-release-name <release-name> --namespace <agent-deployment-namespace>`
+
+This command collects diagnostic data from the specified MQ Agent release running in an OpenShift environment.
+
+By default, the output is saved inside a `MQ-Agent_MustGather_<timestamp>` folder in the current working directory.
+
+For full usage and output, see the [MQAgents Mustgather Usage Guide](https://github.ibm.com/mq-cloudpak/mq-container-inspector/blob/main/docs/MQAgentsMustGatherUsage.md)
+
 ## Issues and contributions
 
 For issues relating specifically to the MQ container inspector tool, please use the [GitHub issue tracker](https://github.com/ibm-messaging/mq-container-inspector/issues). Pull requests are not currently accepted.
@@ -126,4 +139,4 @@ This tool is licensed under the [Apache License 2.0](http://www.apache.org/licen
 
 ## Copyright
 
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2026
