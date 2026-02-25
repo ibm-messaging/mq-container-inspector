@@ -85,6 +85,15 @@ func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {
 	fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
 	logger.Info("---- Deployment details collected ----")
 
+	// validate mq-agent release name
+	if err := validations.ValidateMQAgentReleaseName(coreClient, deploymentList, flags.AgentReleaseName, flags.Namespace, logger); err != nil {
+		// delete the empty directories
+		if err := utils.DeleteEmptyDirectories(flags.OutputDir, logger); err != nil {
+			logger.Error(err.Error())
+		}
+		return err
+	}
+
 	logger.Info("---- Collecting ReplicaSet details ----")
 	fmt.Print("Collecting ReplicaSet details...")
 	mustGatherTime = time.Now()

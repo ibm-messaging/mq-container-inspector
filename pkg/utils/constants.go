@@ -153,6 +153,8 @@ const MQAgentLabels = "app.kubernetes.io/managed-by=Helm,app.kubernetes.io/compo
 
 const MQAgentManagedByLabel = "app.kubernetes.io/managed-by=Helm"
 
+const MQAgentResourceNamePrefix = "ibm-mq-agent-"
+
 const HelmReleaseNameAnnotation = "meta.helm.sh/release-name"
 
 const HelmReleaseNamespaceAnnotation = "meta.helm.sh/release-namespace"
