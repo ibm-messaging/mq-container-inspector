@@ -47,7 +47,7 @@ func ValidateNamespace(coreClient kubernetes.Interface, namespace string) error 
 		}
 		return fmt.Errorf("error while checking if the namespace %v exists: %v", namespace, err)
 	} else if !namespaceExists {
-		return fmt.Errorf("provided queue manager namespace %v was not found on the currently logged-in cluster", namespace)
+		return fmt.Errorf("provided namespace %v was not found on the currently logged-in cluster", namespace)
 	}
 
 	return nil
