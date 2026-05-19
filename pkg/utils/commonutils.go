@@ -61,6 +61,7 @@ type MQAgentFlags struct {
 	KubeconfigPath   string // path to the kubeconfig file
 	OutputDir        string // directory where the collected mq-agent must-gather data will be stored
 	SkipTar          bool   // whether to tar+zip the pvc-inspector output
+	SkipExec         bool   // whether to collect pod-exec dmp and trc files
 	Help             bool   // Flag to display help message
 }
 

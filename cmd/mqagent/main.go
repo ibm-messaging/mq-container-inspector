@@ -78,6 +78,7 @@ func parseFlags(args []string) (utils.MQAgentFlags, error) {
 	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "path to the kubeconfig file. Ignored when running via mustgather image (default: ~/.kube/config)")
 	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "directory where the must-gather output folder will be created. Ignored when running via mustgather image (default: current working directory)")
 	flagSet.BoolVar(&flags.SkipTar, "skip-tar", false, "skip compressing the mq-agent must-gather output into a tar.gz file (default: false)")
+	flagSet.BoolVar(&flags.SkipExec, "skip-exec", false, "skip gathering data that require container exec access, e.g. dmp, trc files (default: false)")
 	flagSet.BoolVar(&flags.Help, "help", false, "show help message")
 
 	flagSet.Usage = func() {
