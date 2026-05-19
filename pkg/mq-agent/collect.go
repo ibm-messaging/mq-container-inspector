@@ -17,10 +17,14 @@ limitations under the License.
 package mqagent
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/configmap"
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/deployment"
@@ -33,6 +37,8 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 
 	routeV1 "github.com/openshift/api/route/v1"
 	routeClient "github.com/openshift/client-go/route/clientset/versioned"
@@ -572,6 +578,154 @@ func CollectMQAgentServiceAccountDetails(coreClient kubernetes.Interface, flags 
 		logger.Error(err.Error())
 	} else {
 		logger.Info(fmt.Sprintf("Service-Account details: %s Total Files: %d", serviceAccountDirectory, fileCount))
+	}
+
+	return nil
+}
+
+func CollectMQAgentDiagFiles(cfg *rest.Config, flags utils.MQAgentFlags, fileSuffix string, podList []corev1.Pod, logger *slog.Logger) error {
+
+	var diagFileDirectory string
+
+	switch fileSuffix {
+	case utils.MQAgentDumpFileSuffix:
+		diagFileDirectory = filepath.Join(flags.OutputDir, "dump")
+	case utils.MQAgentTraceFileSuffix:
+		diagFileDirectory = filepath.Join(flags.OutputDir, "trace")
+	}
+
+	if diagFileDirectory == "" {
+		logger.Info(fmt.Sprintf("Invalid mq agent diag file suffix: %v", fileSuffix))
+		return nil
+	}
+
+	if !utils.CheckIfDirectoryExist(diagFileDirectory) {
+		if err := utils.CreateDirectory(diagFileDirectory, 0o755); err != nil {
+			return err
+		}
+	}
+
+	for _, pod := range podList {
+
+		// get all the files with the matching fileSuffix
+		listMatchingFilesExecConfig := utils.ExecConfig{
+			KubernetesConfig: cfg,
+			PodName:          pod.ObjectMeta.Name,
+			Namespace:        flags.Namespace,
+			ContainerName:    utils.MQAgentAgentContainerName,
+			Cmd: []string{
+				"sh", "-c", fmt.Sprintf(`find %s -type f \( -name "*.%s" \)`, utils.MQAgentDiagFilesLocation, fileSuffix),
+			},
+			Logger: logger,
+		}
+
+		files, err := listMQAgentDiagMatchingFilesHelper(listMatchingFilesExecConfig)
+		if err != nil {
+			logger.Info(fmt.Sprintf("Error listing diag files matching *.%v files in %v pod: %v", fileSuffix, pod.ObjectMeta.Name, err))
+			continue
+		} else if len(files) == 0 {
+			logger.Info(fmt.Sprintf("No matching *.%v files found at %v in %v pod", fileSuffix, utils.MQAgentDiagFilesLocation, pod.ObjectMeta.Name))
+			continue
+		}
+
+		logger.Info(fmt.Sprintf("Found %d *.%v files in %v pod", len(files), fileSuffix, pod.ObjectMeta.Name))
+
+		// copy each file
+		for _, file := range files {
+
+			file = strings.TrimSpace(file)
+			if file == "" {
+				continue
+			}
+
+			outputFilePath := filepath.Join(diagFileDirectory, fmt.Sprintf("%s", filepath.Base(file)))
+
+			copyFileExecConfig := utils.ExecConfig{
+				KubernetesConfig: cfg,
+				PodName:          pod.ObjectMeta.Name,
+				Namespace:        flags.Namespace,
+				ContainerName:    utils.MQAgentAgentContainerName,
+				Cmd: []string{
+					"cat", file,
+				},
+				Logger: logger,
+			}
+
+			if err := copyMQAgentDiagFileHelper(copyFileExecConfig, outputFilePath); err != nil {
+				logger.Info(fmt.Sprintf("Error copying mq-agent diag file %s from pod %s: %v", file, pod.ObjectMeta.Name, err))
+				continue
+			}
+			logger.Info(fmt.Sprintf("Copied mq-agent diag file %s from pod %s to %s", file, pod.ObjectMeta.Name, outputFilePath))
+		}
+
+	}
+
+	// check if the directory is empty
+	if fileCount, err := utils.GetFileCountInDirectory(diagFileDirectory); err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.Info(fmt.Sprintf("%v diag file details: %s: Total Files: %d", fileSuffix, diagFileDirectory, fileCount))
+	}
+
+	return nil
+
+}
+
+func listMQAgentDiagMatchingFilesHelper(execConfig utils.ExecConfig) ([]string, error) {
+
+	exec, err := pods.ExecCmd(execConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	err = exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
+		Stdout: &stdout,
+		Stderr: &stderr,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("find command failed: %w stderr: %s", err, stderr.String())
+	}
+
+	output := strings.TrimSpace(stdout.String())
+	if output == "" {
+		return []string{}, nil
+	}
+
+	return strings.Split(output, "\n"), nil
+
+}
+
+func copyMQAgentDiagFileHelper(execConfig utils.ExecConfig, filePath string) error {
+
+	exec, err := pods.ExecCmd(execConfig)
+	if err != nil {
+		return err
+	}
+
+	outputDir := filepath.Dir(filePath)
+	outputFileName := filepath.Base(filePath)
+
+	if err := utils.SafeMkdirAll(outputDir, ".", 0o755); err != nil {
+		return err
+	}
+
+	out, err := utils.SafeOpenFile(outputDir, outputFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	var stderr bytes.Buffer
+
+	err = exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
+		Stdout: out,
+		Stderr: &stderr,
+	})
+	if err != nil {
+		return fmt.Errorf("cat command failed: %w stderr: %s", err, stderr.String())
 	}
 
 	return nil

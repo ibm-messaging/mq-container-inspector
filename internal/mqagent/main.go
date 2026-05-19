@@ -164,6 +164,29 @@ func MQAgentMustGather(cfg *rest.Config, flags utils.MQAgentFlags) error {
 	fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
 	logger.Info("---- ServiceAccount details collected ----")
 
+	// if skip-exec is disabled, then collect the dmp and trc files
+	if !flags.SkipExec {
+		logger.Info("---- Collecting dump(*.dmp) files(This may take some time) ----")
+		fmt.Print("Collecting dump(*.dmp) files(This may take some time) ...")
+		mustGatherTime = time.Now()
+		err = mqagent.CollectMQAgentDiagFiles(cfg, flags, utils.MQAgentDumpFileSuffix, podList, logger)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
+		logger.Info("---- Dump(*.dmp) files collected ----")
+
+		logger.Info("---- Collecting trace(*.trc) files(This may take some time) ----")
+		fmt.Print("Collecting trace(*.trc) files(This may take some time) ...")
+		mustGatherTime = time.Now()
+		err = mqagent.CollectMQAgentDiagFiles(cfg, flags, utils.MQAgentTraceFileSuffix, podList, logger)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Took: %v\n", time.Since(mustGatherTime).Round(time.Millisecond))
+		logger.Info("---- Trace(*.trc) files collected ----")
+	}
+
 	// delete the empty directories
 	if err := utils.DeleteEmptyDirectories(flags.OutputDir, logger); err != nil {
 		logger.Error(err.Error())
