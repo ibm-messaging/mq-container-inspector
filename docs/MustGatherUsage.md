@@ -43,6 +43,8 @@ Usage of mustgather:
         QueueManager custom resource metadata.name (exactly one of --qm-name or --pod-name are required)
   --qm-namespace
         namespace where the queue manager is deployed (required)
+  --pod-discovery
+        enforce pod-based resource discovery instead of using the app.kubernetes.io/instance label when --pod-name is specified
   --skip-exec
         skip gathering diagnostic data that require container exec access, e.g. runmqras, webconsole logs (default: false)
   --skip-tar

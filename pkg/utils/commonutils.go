@@ -31,6 +31,7 @@ import (
 
 type MustGatherFlags struct {
 	QueueManagerName      string // QueueManager resource name
+	PodDiscovery          bool   // enforce pod-based resource discovery instead of using the app.kubernetes.io/instance label.
 	PodName               string // pod name
 	QueueManagerNamespace string // QueueManager  resource namespace
 	OperatorNamespace     string // namespace where the MQ Operator is running
