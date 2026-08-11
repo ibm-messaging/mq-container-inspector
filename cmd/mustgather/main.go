@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025, 2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ func parseFlags(args []string) (utils.MustGatherFlags, error) {
 	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "directory where the must-gather output folder will be created. Ignored when running via mustgather image (default: current working directory)")
 	flagSet.BoolVar(&flags.SkipTar, "skip-tar", false, "skip compressing the must-gather output into a tar.gz file (default: false)")
 	flagSet.BoolVar(&flags.SkipExec, "skip-exec", false, "skip gathering diagnostic data that require container exec access, e.g. runmqras, webconsole logs (default: false)")
+	flagSet.BoolVar(&flags.PodDiscovery, "pod-discovery", false, "enforce pod-based resource discovery instead of using the app.kubernetes.io/instance label when --pod-name is specified (default: false)")
 	flagSet.BoolVar(&flags.Help, "help", false, "show help message")
 	flagSet.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", flagSet.Name())
@@ -158,6 +159,10 @@ func validateRequiredFlags(flags utils.MustGatherFlags) (bool, string) {
 
 	if flags.QueueManagerName != "" && flags.PodName != "" {
 		return false, "only one of --qm-name or --pod-name can be provided"
+	}
+
+	if flags.PodDiscovery && flags.PodName == "" {
+		return false, "--pod-discovery requires --pod-name to be set"
 	}
 
 	return true, ""
