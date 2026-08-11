@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025, 2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -62,9 +62,11 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if pod, err := validations.ValidatePodName(coreClient, flags.PodName, flags.QueueManagerNamespace); err != nil {
 		return err
 	} else if pod != nil {
-		if labelValue, exists := pod.ObjectMeta.Labels["app.kubernetes.io/instance"]; exists {
-			flags.QueueManagerName = labelValue
-			flags.PodName = ""
+		if !flags.PodDiscovery {
+			if labelValue, exists := pod.ObjectMeta.Labels["app.kubernetes.io/instance"]; exists {
+				flags.QueueManagerName = labelValue
+				flags.PodName = ""
+			}
 		}
 		qmPod = pod
 	}
