@@ -166,3 +166,9 @@ const MQAgentTraceFileSuffix = "trc"
 const MQAgentAgentContainerName = "agent"
 
 const MQAgentDiagFilesLocation = "/opt/run"
+
+const DefaultQMImageRegistry = "cp.icr.io/cp"
+
+const DefaultQMImageType = "ibm-mqadvanced-server"
+
+const DefaultQMIBMEntitlementKey = "ibm-entitlement-key"

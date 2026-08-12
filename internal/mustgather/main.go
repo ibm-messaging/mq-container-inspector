@@ -53,7 +53,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	}
 
 	// validate the --qm-name flag
-	qmPod, err := validations.ValidateQueueManagerName(coreClient, dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace)
+	qmPod, err := validations.ValidateQueueManagerName(coreClient, dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace, "")
 	if err != nil {
 		return err
 	}
