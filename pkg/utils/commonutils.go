@@ -46,6 +46,7 @@ type MustGatherFlags struct {
 type PVCInspectorFlags struct {
 	QueueManagerName      string // QueueManager resource name
 	PodName               string // pod name
+	QueueManagerImage     string // QueueManager image
 	QueueManagerNamespace string // QueueManager  resource namespace
 	KubeconfigPath        string // path to the kubeconfig file
 	OutputDir             string // directory where the collected pvc-inspector data will be stored

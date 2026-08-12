@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025,2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -62,15 +62,9 @@ func PVCInspectorTool(cfg *rest.Config, flags utils.PVCInspectorFlags) error {
 	}
 
 	// validate the --qm-name flag
-	qmPod, err := validations.ValidateQueueManagerName(coreClient, dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace)
+	qmPod, err := validations.ValidateQueueManagerName(coreClient, dynamicClient, flags.QueueManagerName, flags.QueueManagerNamespace, flags.QueueManagerImage)
 	if err != nil {
 		return err
-	}
-
-	// if queue-manager is not in running state, then pvc-data cannot be collected
-	if qmPod == nil {
-		logger.Info(fmt.Sprintf("Unable to run pvc-tool, because no queue manager pods exist for QueueManager CR %s in namespace %s.", flags.QueueManagerName, flags.QueueManagerNamespace))
-		return fmt.Errorf("unable to run pvc-tool, because no queue manager pods exist for QueueManager CR %s in namespace %s", flags.QueueManagerName, flags.QueueManagerNamespace)
 	}
 
 	// validate the --pod-name flag
@@ -84,9 +78,20 @@ func PVCInspectorTool(cfg *rest.Config, flags utils.PVCInspectorFlags) error {
 		qmPod = pod
 	}
 
+	// if queue-manager is not in running state, then fallback to --qm-image
+	var qmImageInfo pvcinspector.QMImageInfo
+	if qmPod == nil {
+		logger.Info(fmt.Sprintf("No queue manager pods exist for QueueManager CR %s in namespace %s.", flags.QueueManagerName, flags.QueueManagerNamespace))
+		if qmImageInfo, err = validations.ValidateQueueManagerImage(dynamicClient, flags, logger); err != nil {
+			logger.Info(fmt.Sprintf("error validating the qm-image flag: $%v", err))
+			return err
+		}
+		logger.Info("No pods found for the provided queue manager name, hence falling back to `--qm-image`")
+	}
+
 	logger.Info("---- Starting PVC-Inspector tool ----")
 
-	pvcPods, err := pvcinspector.SetupPVCPods(coreClient, flags, qmPod, logger)
+	pvcPods, err := pvcinspector.SetupPVCPods(coreClient, dynamicClient, &flags, qmPod, qmImageInfo, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error setting up PVC pods: %v", err))
 		return err
