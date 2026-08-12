@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025, 2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ func ValidatePodName(coreClient kubernetes.Interface, podName, namespace string)
 
 }
 
-func ValidateQueueManagerName(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, qmName, namespace string) (*corev1.Pod, error) {
+func ValidateQueueManagerName(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, qmName, namespace, qmImage string) (*corev1.Pod, error) {
 
 	if qmName == "" {
 		return nil, nil
@@ -109,11 +109,18 @@ func ValidateQueueManagerName(coreClient kubernetes.Interface, dynamicClient dyn
 		if queueManagerCRExists(dynamicClient, qmName, namespace) {
 			return nil, nil
 		}
+
+		// check if the fall-back to qm-image is being used
+		if qmImage != "" {
+			return nil, nil
+		}
+
 		// display all the QMGR pods in the namespace
 		fmt.Printf("Queue manager '%s' not found in the namespace '%s'\n", qmName, namespace)
 		if err := listAllQueueManagerCRs(dynamicClient, qmName, namespace); err != nil {
 			return nil, err
 		}
+
 		return nil, fmt.Errorf("no queue manager found with name %s in namespace %s", qmName, namespace)
 	}
 

@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025,2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ func parseFlags(args []string) (utils.PVCInspectorFlags, error) {
 	// The qm-namespace is required flag and at least one of qm-name or pod-name must be specified
 	flagSet.StringVar(&flags.QueueManagerName, "qm-name", "", "QueueManager custom resource metadata.name (exactly one of --qm-name or pod-name are required)")
 	flagSet.StringVar(&flags.PodName, "pod-name", "", "name of a queue manager pod in the target queue manager instance (exactly one of --qm-name or pod-name are required)")
+	flagSet.StringVar(&flags.QueueManagerImage, "qm-image", "", "Queue manager container image used for the PVC inspector pod if no queue manager pods exist. Specify either a queue manager container V.R.M.F-release version or a fully qualified container image reference. Requires --qm-name.")
 	flagSet.StringVar(&flags.QueueManagerNamespace, "qm-namespace", "", "namespace where the queue manager is deployed (required)")
 	flagSet.StringVar(&flags.KubeconfigPath, "kubeconfig", "", "path to the kubeconfig file. Ignored when running via mustgather image. (default: ~/.kube/config)")
 	flagSet.StringVar(&flags.OutputDir, "output-dir", "", "directory where the must-gather output folder will be created. Ignored when running via mustgather image. (default: current working directory)")

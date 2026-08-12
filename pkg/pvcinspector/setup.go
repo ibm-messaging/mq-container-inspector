@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025, 2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,7 +31,9 @@ import (
 	"github.ibm.com/mq-cloudpak/mq-container-inspector/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/ptr"
 
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -44,27 +46,7 @@ import (
 //go:embed custom-isa.xml
 var customISA embed.FS
 
-func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags, qmPod *corev1.Pod, logger *slog.Logger) ([]corev1.Pod, error) {
-
-	// check if the qmPod has persisted storage
-	if !utils.CheckIfPodHasPersistedStorage(*qmPod) {
-		return nil, fmt.Errorf("no PVCs found. Check that the specified resource is not using ephemeral storage")
-	}
-
-	var podList []corev1.Pod
-
-	// check the instance type of the qmPod, and fill the podList
-	if utils.GetPodInstance(qmPod) != utils.SingleInstance {
-		pods, err := pods.GetMQReplicaPodsViaService(coreClient, qmPod.ObjectMeta.Name, flags.QueueManagerNamespace)
-		if err != nil {
-			return nil, err
-		}
-		podList = append(podList, pods...)
-	} else {
-		podList = append(podList, *qmPod)
-	}
-
-	var pvcPods []corev1.Pod
+func SetupPVCPods(coreClient kubernetes.Interface, dynamicClient dynamic.Interface, flags *utils.PVCInspectorFlags, qmPod *corev1.Pod, qmImageInfo QMImageInfo, logger *slog.Logger) ([]corev1.Pod, error) {
 
 	// create pvc pods yaml directory inside the outputDir to collect the pvc-pods yamls
 	pvcPodYamlDir := filepath.Join(flags.OutputDir, "pvc-pod-yamls")
@@ -74,6 +56,8 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 		}
 	}
 
+	var pvcPods []corev1.Pod
+
 	if flags.DryRun {
 		logger.Info("Dry-run enabled: pvc-inspector pods will not be created, only the pod YAMLs will be collected")
 		fmt.Println("Dry-run enabled: pvc-inspector pods will not be created, only the pod YAMLs will be collected")
@@ -81,53 +65,76 @@ func SetupPVCPods(coreClient kubernetes.Interface, flags utils.PVCInspectorFlags
 		fmt.Println("----- Creating PVC-inspector pods -----")
 	}
 
-	// for each pod spin-up a corresponding pvc pod
-	for _, pod := range podList {
-
-		worker := pod.Spec.NodeName
-
-		var err error
-
-		// create the pvc-pod skeleton structure
-		pvcPod, err := createPVCPodStructure(coreClient, pod, worker, flags, logger)
+	if qmImageInfo.Image != "" {
+		podPVCMountDataMap, err := createPVCPodsByQMImage(coreClient, *flags, qmImageInfo, logger)
 		if err != nil {
+			logger.Info(fmt.Sprintf("error creating pvc-inspector pods from the provided `--qm-image` in namespace %s: %v", flags.QueueManagerNamespace, err))
 			return nil, err
 		}
-		var createdPod *corev1.Pod
 
-		if !flags.DryRun {
-			// create the pvc pod
-			createdPod, err = coreClient.CoreV1().Pods(pvcPod.ObjectMeta.Namespace).Create(context.TODO(), pvcPod, metav1.CreateOptions{})
+		flags.QueueManagerImage = qmImageInfo.Image
+
+		for podName, pvcMountData := range podPVCMountDataMap {
+			pvcPod, err := createPVCPod(coreClient, nil, podName, &pvcMountData, "", *flags, logger)
 			if err != nil {
-				if errors.IsAlreadyExists(err) {
-					fmt.Printf("Pod %v already exists, using existing pod for pvctool\n", pvcPod.ObjectMeta.Name)
-					logger.Info(fmt.Sprintf("Pod %v already exists, using existing pod for pvctool\n", pvcPod.ObjectMeta.Name))
-					createdPod, err = pods.GetPodByName(coreClient, pvcPod.ObjectMeta.Name, pvcPod.ObjectMeta.Namespace)
-					if err != nil {
-						return nil, err
-					}
-				} else {
-					return nil, err
-				}
-			} else {
-				// watch for the pod creation and when pod has been created/failed then log the result
-				if err := pods.SetupPodWatcher(coreClient, createdPod, flags.QueueManagerNamespace, utils.PodCreationWatcher, logger); err != nil {
-					logger.Error(fmt.Sprintf("Error while watching pvc-inspector pod creation: %v", err))
-				}
-				logger.Info(fmt.Sprintf("Creating PVC pod %s for %s pod in %s namespace", createdPod.ObjectMeta.Name, pod.ObjectMeta.Name, createdPod.ObjectMeta.Namespace))
+				return nil, err
 			}
-			pvcPods = append(pvcPods, *createdPod)
+
+			// collect the pvc-pod yaml
+			if err := collectPVCPodYaml(pvcPod, pvcPodYamlDir); err != nil {
+				logger.Error(fmt.Sprintf("Error collecting pvc-pod yaml: %v", err))
+			}
+
+			pvcPods = append(pvcPods, *pvcPod)
+		}
+
+	} else {
+
+		// check if the qmPod has persisted storage
+		if !utils.CheckIfPodHasPersistedStorage(*qmPod) {
+			return nil, fmt.Errorf("no PVCs found. Check that the specified resource is not using ephemeral storage")
+		}
+
+		var podList []corev1.Pod
+
+		// check the instance type of the qmPod, and fill the podList
+		if utils.GetPodInstance(qmPod) != utils.SingleInstance {
+			pods, err := pods.GetMQReplicaPodsViaService(coreClient, qmPod.ObjectMeta.Name, flags.QueueManagerNamespace)
+			if err != nil {
+				return nil, err
+			}
+			podList = append(podList, pods...)
 		} else {
-			createdPod = pvcPod
+			podList = append(podList, *qmPod)
 		}
 
-		// collect the pvc-pod yaml
-		if err := collectPVCPodYaml(createdPod, pvcPodYamlDir); err != nil {
-			logger.Error(fmt.Sprintf("Error collecting pvc-pod yaml: %v", err))
-		}
+		// for each pod spin-up a corresponding pvc pod
+		for _, pod := range podList {
 
+			worker := pod.Spec.NodeName
+
+			var err error
+
+			// create the pvc-pod skeleton structure
+			pvcPod, err := createPVCPod(coreClient, &pod, "", nil, worker, *flags, logger)
+			if err != nil {
+				return nil, err
+			}
+			// collect the pvc-pod yaml
+			if err := collectPVCPodYaml(pvcPod, pvcPodYamlDir); err != nil {
+				logger.Error(fmt.Sprintf("Error collecting pvc-pod yaml: %v", err))
+			}
+
+			pvcPods = append(pvcPods, *pvcPod)
+
+		}
 	}
 	fmt.Println("----- PVC-inspector creation process completed -----")
+
+	if len(pvcPods) == 0 {
+		logger.Info("no pvc pods created")
+		return nil, fmt.Errorf("no pvc pods were created")
+	}
 
 	return pvcPods, nil
 
@@ -205,26 +212,36 @@ func ExecuteRunmqras(cfg *rest.Config, client kubernetes.Interface, pods []corev
 
 }
 
-func createPVCPodStructure(client kubernetes.Interface, pod corev1.Pod, worker string, flags utils.PVCInspectorFlags, logger *slog.Logger) (*corev1.Pod, error) {
+func createPVCPodStructure(client kubernetes.Interface, pod *corev1.Pod, pvcPodName string, podPVCMountData *PodPVCMountData, worker string, flags utils.PVCInspectorFlags, logger *slog.Logger) (*corev1.Pod, error) {
 
 	var pvcPodVolumeMounts []corev1.VolumeMount
 	var pvcPodVolumes []corev1.Volume
 	volumeNameMap := make(map[string]struct{})
 
-	for _, volume := range pod.Spec.Volumes {
-		if volume.PersistentVolumeClaim != nil {
-			pvcPodVolumes = append(pvcPodVolumes, volume)
+	if podPVCMountData != nil {
+		pvcPodVolumeMounts = podPVCMountData.VolumeMounts
+		pvcPodVolumes = podPVCMountData.Volumes
+
+		for _, volume := range podPVCMountData.Volumes {
 			volumeNameMap[volume.Name] = struct{}{}
 		}
-	}
+	} else {
 
-	for _, volumeMount := range pod.Spec.Containers[0].VolumeMounts {
-		if _, exists := volumeNameMap[volumeMount.Name]; exists {
-			pvcPodVolumeMounts = append(pvcPodVolumeMounts, volumeMount)
+		for _, volume := range pod.Spec.Volumes {
+			if volume.PersistentVolumeClaim != nil {
+				pvcPodVolumes = append(pvcPodVolumes, volume)
+				volumeNameMap[volume.Name] = struct{}{}
+			}
+		}
+
+		for _, volumeMount := range pod.Spec.Containers[0].VolumeMounts {
+			if _, exists := volumeNameMap[volumeMount.Name]; exists {
+				pvcPodVolumeMounts = append(pvcPodVolumeMounts, volumeMount)
+			}
 		}
 	}
 
-	pvcPod := generatePVCPodSkeleton(pod, worker, pvcPodVolumeMounts, pvcPodVolumes)
+	pvcPod := generatePVCPodSkeleton(pod, pvcPodName, worker, pvcPodVolumeMounts, pvcPodVolumes, flags.QueueManagerNamespace, flags.QueueManagerImage)
 
 	// create a ConfigMap with the file-data, if configmap already exists then update the ConfigMap
 	if err := createConfigMap(client, flags.QueueManagerNamespace, logger); err != nil {
@@ -238,33 +255,70 @@ func createPVCPodStructure(client kubernetes.Interface, pod corev1.Pod, worker s
 }
 
 // generatePVCPodSkeleton generates the skeleton for the pvc-pod
-func generatePVCPodSkeleton(pod corev1.Pod, worker string, pvcPodVolumeMounts []corev1.VolumeMount, pvcPodVolumes []corev1.Volume) *corev1.Pod {
-	return &corev1.Pod{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       utils.KindPod,
-			APIVersion: utils.ApiVersionV1,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("pvc-inspector-%s", pod.ObjectMeta.Name),
-			Namespace: pod.ObjectMeta.Namespace,
-			Labels: map[string]string{
-				"tool": "pvc-inspector-tool",
+func generatePVCPodSkeleton(pod *corev1.Pod, pvcPodName, worker string, pvcPodVolumeMounts []corev1.VolumeMount, pvcPodVolumes []corev1.Volume, qmNamespace, qmImage string) *corev1.Pod {
+
+	var podName string
+	if pvcPodName != "" {
+		podName = pvcPodName
+	} else {
+		podName = fmt.Sprintf("pvc-inspector-%s", pod.ObjectMeta.Name)
+	}
+
+	var namespace string
+	var podSecurityContext *corev1.PodSecurityContext
+	var containerImage string
+	var containerSecurityContext *corev1.SecurityContext
+	var imagePullSecrets []corev1.LocalObjectReference
+
+	if pod != nil {
+		namespace = pod.ObjectMeta.Namespace
+		podSecurityContext = pod.Spec.SecurityContext
+		containerImage = pod.Spec.Containers[0].Image
+		containerSecurityContext = pod.Spec.Containers[0].SecurityContext
+		imagePullSecrets = pod.Spec.ImagePullSecrets
+	} else {
+		namespace = qmNamespace
+
+		podSecurityContext = &corev1.PodSecurityContext{
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
 			},
-		},
-		Spec: corev1.PodSpec{
-			// adding node affinity to handle RWO volumes
-			Affinity: &corev1.Affinity{
-				NodeAffinity: &corev1.NodeAffinity{
-					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-						NodeSelectorTerms: []corev1.NodeSelectorTerm{
-							{
-								MatchExpressions: []corev1.NodeSelectorRequirement{
-									{
-										Key:      utils.NodeAffinityHostNameKey,
-										Operator: corev1.NodeSelectorOpIn,
-										Values: []string{
-											worker,
-										},
+		}
+
+		containerImage = qmImage
+
+		containerSecurityContext = &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{
+					"ALL",
+				},
+			},
+			Privileged:               ptr.To(false),
+			RunAsNonRoot:             ptr.To(true),
+			ReadOnlyRootFilesystem:   ptr.To(false),
+			AllowPrivilegeEscalation: ptr.To(false),
+		}
+
+		imagePullSecrets = []corev1.LocalObjectReference{
+			{
+				Name: utils.DefaultQMIBMEntitlementKey,
+			},
+		}
+	}
+
+	var affinity *corev1.Affinity
+	if worker != "" {
+		affinity = &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: []corev1.NodeSelectorRequirement{
+								{
+									Key:      utils.NodeAffinityHostNameKey,
+									Operator: corev1.NodeSelectorOpIn,
+									Values: []string{
+										worker,
 									},
 								},
 							},
@@ -272,11 +326,30 @@ func generatePVCPodSkeleton(pod corev1.Pod, worker string, pvcPodVolumeMounts []
 					},
 				},
 			},
-			SecurityContext: pod.Spec.SecurityContext,
+		}
+	}
+
+	return &corev1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       utils.KindPod,
+			APIVersion: utils.ApiVersionV1,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"tool": "pvc-inspector-tool",
+			},
+		},
+		Spec: corev1.PodSpec{
+			// adding node affinity to handle RWO volumes
+			Affinity:         affinity,
+			SecurityContext:  podSecurityContext,
+			ImagePullSecrets: imagePullSecrets,
 			Containers: []corev1.Container{
 				{
 					Name:         utils.PVCInspectorContainer,
-					Image:        pod.Spec.Containers[0].Image,
+					Image:        containerImage,
 					Command:      utils.GetPVCInspectorContainerCommand(),
 					VolumeMounts: pvcPodVolumeMounts,
 					Env: []corev1.EnvVar{
@@ -285,7 +358,7 @@ func generatePVCPodSkeleton(pod corev1.Pod, worker string, pvcPodVolumeMounts []
 							Value: "accept",
 						},
 					},
-					SecurityContext: pod.Spec.Containers[0].SecurityContext,
+					SecurityContext: containerSecurityContext,
 				},
 			},
 			Volumes: pvcPodVolumes,
@@ -442,4 +515,54 @@ func managedByMQInspector(configMap *corev1.ConfigMap) bool {
 
 	return configMap.Labels[key] == val
 
+}
+
+func createPVCPod(coreClient kubernetes.Interface, pod *corev1.Pod, pvcPodName string, podPVCMountData *PodPVCMountData, worker string, flags utils.PVCInspectorFlags, logger *slog.Logger) (*corev1.Pod, error) {
+
+	var pvcPod *corev1.Pod
+	var err error
+
+	if podPVCMountData != nil {
+		pvcPod, err = createPVCPodStructure(coreClient, nil, pvcPodName, podPVCMountData, "", flags, logger)
+	} else {
+		pvcPod, err = createPVCPodStructure(coreClient, pod, "", nil, worker, flags, logger)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	var createdPod *corev1.Pod
+
+	if !flags.DryRun {
+		// create the pvc pod
+		createdPod, err = coreClient.CoreV1().Pods(pvcPod.ObjectMeta.Namespace).Create(context.TODO(), pvcPod, metav1.CreateOptions{})
+		if err != nil {
+			if errors.IsAlreadyExists(err) {
+				fmt.Printf("Pod %v already exists, using existing pod for pvctool\n", pvcPod.ObjectMeta.Name)
+				logger.Info(fmt.Sprintf("Pod %v already exists, using existing pod for pvctool\n", pvcPod.ObjectMeta.Name))
+				createdPod, err = pods.GetPodByName(coreClient, pvcPod.ObjectMeta.Name, pvcPod.ObjectMeta.Namespace)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, err
+			}
+		} else {
+			// watch for the pod creation and when pod has been created/failed then log the result
+			if err := pods.SetupPodWatcher(coreClient, createdPod, flags.QueueManagerNamespace, utils.PodCreationWatcher, logger); err != nil {
+				logger.Error(fmt.Sprintf("Error while watching pvc-inspector pod creation: %v", err))
+			}
+			sourceInfo := "no source pod (created from --qm-image)"
+			if pod != nil {
+				sourceInfo = fmt.Sprintf("for %s pod", pod.ObjectMeta.Name)
+			}
+			logger.Info(fmt.Sprintf("Creating PVC pod %s %s in %s namespace", createdPod.ObjectMeta.Name, sourceInfo, createdPod.ObjectMeta.Namespace))
+
+		}
+		return createdPod, nil
+	}
+	createdPod = pvcPod
+
+	return createdPod, nil
 }
