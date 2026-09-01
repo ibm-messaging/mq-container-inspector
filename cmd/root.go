@@ -89,5 +89,7 @@ Use "mq-container-inspector <command> --help" for more information about a comma
 }
 
 func printVersion() {
+
 	fmt.Println("mq-container-inspector version: 1.3.0")
+
 }
