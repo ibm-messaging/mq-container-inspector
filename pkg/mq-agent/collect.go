@@ -407,7 +407,7 @@ func CollectMQAgentServiceDetails(coreClient kubernetes.Interface, flags utils.M
 
 	serviceDirectory := filepath.Join(flags.OutputDir, "service")
 	if !utils.CheckIfDirectoryExist(serviceDirectory) {
-		if err := utils.CreateDirectory(serviceDirectory, 0o755); err != nil {
+		if err := utils.CreateDirectory(serviceDirectory, 0o775); err != nil {
 			return nil, err
 		}
 	}
@@ -455,7 +455,7 @@ func CollectMQAgentRouteDetails(routeClient routeClient.Interface, serviceNameLi
 
 	routeDirectory := filepath.Join(flags.OutputDir, "route")
 	if !utils.CheckIfDirectoryExist(routeDirectory) {
-		if err := utils.CreateDirectory(routeDirectory, 0o755); err != nil {
+		if err := utils.CreateDirectory(routeDirectory, 0o775); err != nil {
 			return err
 		}
 	}
@@ -552,7 +552,7 @@ func CollectMQAgentServiceAccountDetails(coreClient kubernetes.Interface, flags 
 
 	serviceAccountDirectory := filepath.Join(flags.OutputDir, "service-account")
 	if !utils.CheckIfDirectoryExist(serviceAccountDirectory) {
-		if err := utils.CreateDirectory(serviceAccountDirectory, 0o755); err != nil {
+		if err := utils.CreateDirectory(serviceAccountDirectory, 0o775); err != nil {
 			return err
 		}
 	}
@@ -600,7 +600,7 @@ func CollectMQAgentDiagFiles(cfg *rest.Config, flags utils.MQAgentFlags, fileSuf
 	}
 
 	if !utils.CheckIfDirectoryExist(diagFileDirectory) {
-		if err := utils.CreateDirectory(diagFileDirectory, 0o755); err != nil {
+		if err := utils.CreateDirectory(diagFileDirectory, 0o775); err != nil {
 			return err
 		}
 	}
@@ -708,7 +708,7 @@ func copyMQAgentDiagFileHelper(execConfig utils.ExecConfig, filePath string) err
 	outputDir := filepath.Dir(filePath)
 	outputFileName := filepath.Base(filePath)
 
-	if err := utils.SafeMkdirAll(outputDir, ".", 0o755); err != nil {
+	if err := utils.SafeMkdirAll(outputDir, ".", 0o775); err != nil {
 		return err
 	}
 

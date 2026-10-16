@@ -46,3 +46,13 @@ func GetServiceAccountDetailsBySelector(client kubernetes.Interface, selector, n
 
 	return serviceAccountList.Items, err
 }
+
+func GetServiceAccountDetailsByName(client kubernetes.Interface, name, namespace string) (*corev1.ServiceAccount, error) {
+
+	serviceAccount, err := client.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+
+	serviceAccount.TypeMeta.APIVersion = utils.ApiVersionV1
+	serviceAccount.TypeMeta.Kind = utils.KindServiceAccount
+
+	return serviceAccount, err
+}

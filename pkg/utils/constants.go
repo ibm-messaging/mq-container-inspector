@@ -33,6 +33,10 @@ const ApiVersionRouteV1 = "route.openshift.io/v1"
 
 const ApiVersionNetworkingV1 = "networking.k8s.io/v1"
 
+const ApiVersionPolicyV1 = "policy/v1"
+
+const ApiVersionRbacV1 = "rbac.authorization.k8s.io/v1"
+
 const KindPod = "Pod"
 
 const KindList = "List"
@@ -72,6 +76,14 @@ const KindCRD = "CustomResourceDefinition"
 const KindConfigMap = "ConfigMap"
 
 const KindNetworkPolicy = "NetworkPolicy"
+
+const KindPodDisruptionBudget = "PodDisruptionBudget"
+
+const KindRole = "Role"
+
+const KindClusterRole = "ClusterRole"
+
+const KindRoleBinding = "RoleBinding"
 
 const QmgrGroup = "mq.ibm.com"
 
@@ -172,3 +184,11 @@ const DefaultQMImageRegistry = "cp.icr.io/cp"
 const DefaultQMImageType = "ibm-mqadvanced-server"
 
 const DefaultQMIBMEntitlementKey = "ibm-entitlement-key"
+
+const MQPDBLabel = "mq.ibm.com/status"
+
+const MQPDBEnvVariable = "MQ_ENABLE_READY_REPLICAS"
+
+const MetadataServerContainerName = "metadataserver"
+
+const MetadataServerCommand = "runmetadataserver"

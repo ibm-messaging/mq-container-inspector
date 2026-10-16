@@ -62,9 +62,10 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	if pod, err := validations.ValidatePodName(coreClient, flags.PodName, flags.QueueManagerNamespace); err != nil {
 		return err
 	} else if pod != nil {
-		if !flags.PodDiscovery {
-			if labelValue, exists := pod.ObjectMeta.Labels["app.kubernetes.io/instance"]; exists {
-				flags.QueueManagerName = labelValue
+		if labelValue, exists := pod.ObjectMeta.Labels["app.kubernetes.io/instance"]; exists {
+			flags.QueueManagerName = labelValue
+
+			if !flags.PodDiscovery {
 				flags.PodName = ""
 			}
 		}
@@ -94,6 +95,14 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	logger := slog.New(handler)
 
 	logger.Info("---- Starting Must-Gather tool ----")
+
+	isPDBEnabled, err := validations.CheckIfPDBEnabled(dynamicClient, qmPod, flags.QueueManagerName, flags.QueueManagerNamespace, flags.QmContainerName)
+	if err != nil {
+		logger.Info(fmt.Sprintf("Error validating if PDB is enabled: %v", err))
+	} else if isPDBEnabled {
+		name := utils.QMIdentifier(qmPod, flags.QueueManagerName, flags.QueueManagerNamespace)
+		logger.Info(fmt.Sprintf("PDB is enabled for %s in %s namespace", name, flags.QueueManagerNamespace))
+	}
 
 	mustGatherToolStartTime := time.Now()
 
@@ -135,7 +144,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	logger.Info("---- Collecting pod details(This may take time) ----")
 	fmt.Print("Collecting pod details(This may take time)...")
 	mustGatherStartTime := time.Now()
-	failedPodNames, err := gatherPodsToFiles(coreClient, flags, logger)
+	failedPodNames, err := gatherPodsToFiles(coreClient, flags, isPDBEnabled, logger)
 	if err != nil {
 		return err
 	}
@@ -274,6 +283,29 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 	}
 	fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
 	logger.Info("---- ConfigMap details collected ----")
+
+	// collect PDB, Role and RoleBinding details
+	if isPDBEnabled {
+		logger.Info("---- Collecting PDB details ----")
+		fmt.Print("Collecting PDB details...")
+		mustGatherStartTime = time.Now()
+		err = gatherPDBToFiles(coreClient, flags, qmPod, logger)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
+		logger.Info("---- PDB details collected ----")
+
+		logger.Info("---- Collecting RBAC details ----")
+		fmt.Print("Collecting RBAC details...")
+		mustGatherStartTime = time.Now()
+		err = gatherRBACToFiles(coreClient, flags, qmPod, logger)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Took: %v\n", time.Since(mustGatherStartTime).Round(time.Millisecond))
+		logger.Info("---- RBAC details collected ----")
+	}
 
 	// if skip-exec is disabled, and the queue-manager is not pending then collect the web-console and runmqras logs
 	if !flags.SkipExec && !isQueueManagerPending {

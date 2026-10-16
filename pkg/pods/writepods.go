@@ -57,13 +57,11 @@ func WritePodDetailsToFile(podList []corev1.Pod, fileNameFormat, outputDir strin
 		for _, pod := range podList {
 
 			podName := pod.Name
-			totalContainers := len(pod.Status.ContainerStatuses)
+			totalContainers := getTotalContainersCount(pod)
 			readyContainers := getReadyContainersCount(pod)
 			ready := fmt.Sprintf("%d/%d", readyContainers, totalContainers)
 			podStatus := GetPodStatus(pod)
 			restartCount := getContainerRestartCount(pod)
-
-			//TODO: where to get the last-restart time like: (17h ago)
 
 			podAge := getPodAge(pod.CreationTimestamp.Time)
 			podIP := pod.Status.PodIP
@@ -240,15 +238,45 @@ func WritePodEventsToFile(podEventMap map[string][]corev1.Event, fileNameFormat,
 	return nil
 }
 
+// restartableInitContainerNames returns the names of init containers declared
+// with restartPolicy: Always — i.e. sidecars that stay running for the
+// lifetime of the pod and count towards the READY column.
+func restartableInitContainerNames(pod corev1.Pod) map[string]bool {
+	names := make(map[string]bool, len(pod.Spec.InitContainers))
+	for _, container := range pod.Spec.InitContainers {
+		if isRestartableInitContainer(container) {
+			names[container.Name] = true
+		}
+	}
+	return names
+}
+
 func getReadyContainersCount(pod corev1.Pod) int {
-	var readyCount int
-	for _, container := range pod.Status.ContainerStatuses {
-		if container.Ready {
+	restartable := restartableInitContainerNames(pod)
+
+	readyCount := 0
+
+	for _, containerStatus := range pod.Status.InitContainerStatuses {
+		if restartable[containerStatus.Name] && containerStatus.Started != nil && *containerStatus.Started && containerStatus.Ready {
+			readyCount++
+		}
+	}
+
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.Ready {
 			readyCount++
 		}
 	}
 
 	return readyCount
+}
+
+func isRestartableInitContainer(container corev1.Container) bool {
+	return container.RestartPolicy != nil && *container.RestartPolicy == corev1.ContainerRestartPolicyAlways
+}
+
+func getTotalContainersCount(pod corev1.Pod) int {
+	return len(pod.Spec.Containers) + len(restartableInitContainerNames(pod))
 }
 
 func GetPodStatus(pod corev1.Pod) string {
@@ -270,10 +298,21 @@ func GetPodStatus(pod corev1.Pod) string {
 }
 
 func getContainerRestartCount(pod corev1.Pod) int32 {
+
+	restartable := restartableInitContainerNames(pod)
+
 	var restartCount int32
+
+	for _, container := range pod.Status.InitContainerStatuses {
+		if restartable[container.Name] {
+			restartCount += container.RestartCount
+		}
+	}
+
 	for _, container := range pod.Status.ContainerStatuses {
 		restartCount += container.RestartCount
 	}
+
 	return restartCount
 }
 

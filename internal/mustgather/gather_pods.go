@@ -1,5 +1,5 @@
 /*
-© Copyright IBM Corporation 2025
+© Copyright IBM Corporation 2025, 2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) ([]string, error) {
+func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags, isPDBEnabled bool, logger *slog.Logger) ([]string, error) {
 
 	// create pods directory to store pod files
 	podsDirectory := filepath.Join(flags.OutputDir, "pods")
@@ -42,21 +42,21 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 
 	var podList []corev1.Pod
 	var nonQmgrPodNames []string
-	var podLogs map[string]utils.PodLogs
+	var podLogs map[string]map[string]utils.PodLogs
 	var podDescribeLogs map[string]string
 	var podEvents map[string][]corev1.Event
 	var err error
 
 	if flags.QueueManagerName != "" {
 
-		podList, nonQmgrPodNames, podLogs, podDescribeLogs, podEvents, err = getPodDetailsBySelector(client, flags, logger)
+		podList, nonQmgrPodNames, podLogs, podDescribeLogs, podEvents, err = getPodDetailsBySelector(client, flags, isPDBEnabled, logger)
 		if err != nil {
 			return nil, err
 		}
 
 	} else if flags.PodName != "" {
 
-		podList, nonQmgrPodNames, podLogs, podDescribeLogs, podEvents, err = getPodDetailsByName(client, flags, logger)
+		podList, nonQmgrPodNames, podLogs, podDescribeLogs, podEvents, err = getPodDetailsByName(client, flags, isPDBEnabled, logger)
 		if err != nil {
 			return nil, err
 		}
@@ -89,8 +89,8 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 	}
 
 	// write the pods logs to their files
-	podLogsFileNameFormat := "%s-%s-pod-log.txt"
-	if err := pods.WritePodLogsToFile(podLogs, podLogsFileNameFormat, podsDirectory, logger); err != nil {
+	podLogsFileNameFormat := "[%s]-%s-%s-pod-log.txt"
+	if err := pods.WritePodAllContainerLogsToFile(podLogs, podLogsFileNameFormat, podsDirectory, logger); err != nil {
 		return nil, err
 	}
 
@@ -119,7 +119,7 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 // for pods in the Kubernetes cluster matching the provided selector.
 // If no resources are found for a given category, the corresponding return value will be nil.
 // Returns an error if the retrieval process fails.
-func getPodDetailsBySelector(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) ([]corev1.Pod, []string, map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
+func getPodDetailsBySelector(client kubernetes.Interface, flags utils.MustGatherFlags, isPDBEnabled bool, logger *slog.Logger) ([]corev1.Pod, []string, map[string]map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
 	podLabelSelector := fmt.Sprintf("app.kubernetes.io/instance=%s", flags.QueueManagerName)
 
 	// get pods by selector
@@ -129,7 +129,7 @@ func getPodDetailsBySelector(client kubernetes.Interface, flags utils.MustGather
 		return nil, nil, nil, nil, nil, fmt.Errorf("error while fetching pods with selector %s: %v", podLabelSelector, err)
 	}
 
-	return getPodDetailsFromPods(client, pods, flags, logger)
+	return getPodDetailsFromPods(client, pods, flags, isPDBEnabled, logger)
 }
 
 // getPodDetailsByName retrieves pod details (List, Logs, Describe, and Events)
@@ -137,7 +137,7 @@ func getPodDetailsBySelector(client kubernetes.Interface, flags utils.MustGather
 // which may exist in multi-instance or native HA configurations, and gathers their details.
 // If no resources are found for a given category, the corresponding return value will be nil.
 // Returns an error if the retrieval process fails.
-func getPodDetailsByName(client kubernetes.Interface, flags utils.MustGatherFlags, logger *slog.Logger) ([]corev1.Pod, []string, map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
+func getPodDetailsByName(client kubernetes.Interface, flags utils.MustGatherFlags, isPDBEnabled bool, logger *slog.Logger) ([]corev1.Pod, []string, map[string]map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
 
 	// fetch the podNames from the matching service
 	pods, err := pods.GetMQReplicaPodsViaService(client, flags.PodName, flags.QueueManagerNamespace)
@@ -146,10 +146,10 @@ func getPodDetailsByName(client kubernetes.Interface, flags utils.MustGatherFlag
 		return nil, nil, nil, nil, nil, fmt.Errorf("error while fetching pods with name %s: %v", flags.PodName, err)
 	}
 
-	return getPodDetailsFromPods(client, pods, flags, logger)
+	return getPodDetailsFromPods(client, pods, flags, isPDBEnabled, logger)
 }
 
-func getPodDetailsFromPods(client kubernetes.Interface, podList []corev1.Pod, flags utils.MustGatherFlags, logger *slog.Logger) ([]corev1.Pod, []string, map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
+func getPodDetailsFromPods(client kubernetes.Interface, podList []corev1.Pod, flags utils.MustGatherFlags, isPDBEnabled bool, logger *slog.Logger) ([]corev1.Pod, []string, map[string]map[string]utils.PodLogs, map[string]string, map[string][]corev1.Event, error) {
 
 	// filter queue-manager pods from the podList
 	podList, nonQmPodNames := filterQueueManagerPods(podList)
@@ -157,7 +157,7 @@ func getPodDetailsFromPods(client kubernetes.Interface, podList []corev1.Pod, fl
 	logger.Info(fmt.Sprintf("Found %d queue-manager pods in %s namespace", len(podList), flags.QueueManagerNamespace))
 
 	// fetch the pod logs
-	podLogs := pods.GetPodLogs(client, podList, flags.QueueManagerNamespace, flags.QmContainerName)
+	podLogs := getPodLogs(client, podList, flags.QueueManagerNamespace, isPDBEnabled, logger)
 
 	// fetch the pod describe logs
 	podDescribeLogs, err := pods.GetPodDescribeLogs(client, podList, flags.QueueManagerNamespace)
@@ -190,5 +190,30 @@ func filterQueueManagerPods(podList []corev1.Pod) ([]corev1.Pod, []string) {
 	}
 
 	return qmPodList, nonQmgrPodNames
+
+}
+
+func getPodLogs(client kubernetes.Interface, podList []corev1.Pod, namespace string, isPDBEnabled bool, logger *slog.Logger) map[string]map[string]utils.PodLogs {
+
+	podContainerMap := make(map[string][]string)
+
+	for _, pod := range podList {
+
+		var containerNames []string
+
+		for _, container := range pod.Spec.Containers {
+			containerNames = append(containerNames, container.Name)
+		}
+
+		if isPDBEnabled {
+			for _, container := range pod.Spec.InitContainers {
+				containerNames = append(containerNames, container.Name)
+			}
+		}
+
+		podContainerMap[pod.ObjectMeta.Name] = containerNames
+	}
+
+	return pods.GetPodLogsForAllContainers(client, podContainerMap, namespace, logger)
 
 }

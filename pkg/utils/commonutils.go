@@ -148,29 +148,42 @@ func DeleteEmptyDirectories(directoryName string, logger *slog.Logger) error {
 
 	entries, err := os.ReadDir(directoryName)
 	if err != nil {
-		return fmt.Errorf("error while reading %s directory", directoryName)
+		return fmt.Errorf("error while reading %s directory: %w", directoryName, err)
 	}
 
 	for _, entry := range entries {
-		if entry.IsDir() {
-			entryPath := filepath.Join(directoryName, entry.Name())
-			fileCount, err := GetFileCountInDirectory(entryPath)
-			if err != nil {
-				return err
-			}
 
-			if fileCount == 0 {
-				if err := SafeRemoveAll(baseDir, entry.Name()); err != nil {
-					return err
-				} else {
-					logger.Info(fmt.Sprintf("Deleting empty directory: %s/%s", directoryName, entry.Name()))
-				}
-			}
+		if !entry.IsDir() {
+			continue
 		}
+
+		entryPath := filepath.Join(directoryName, entry.Name())
+
+		// recurse first so that a parent holding only empty children becomes empty itself
+		if err := DeleteEmptyDirectories(entryPath, logger); err != nil {
+			logger.Info(fmt.Sprintf("error cleaning %s directory: %v", entryPath, err))
+			continue
+		}
+
+		childEntries, err := os.ReadDir(entryPath)
+		if err != nil {
+			logger.Info(fmt.Sprintf("error reading %s directory: %v", entryPath, err))
+			continue
+		}
+
+		if len(childEntries) != 0 {
+			continue
+		}
+
+		if err := SafeRemoveAll(baseDir, entry.Name()); err != nil {
+			logger.Info(fmt.Sprintf("error deleting empty directory %s: %v", entryPath, err))
+			continue
+		}
+
+		logger.Info(fmt.Sprintf("deleted empty directory: %s", entryPath))
 	}
 
 	return nil
-
 }
 
 func GetPodInstance(pod *corev1.Pod) string {
@@ -356,5 +369,47 @@ func FetchPodContainers(pods []corev1.Pod) map[string][]string {
 	}
 
 	return podContainerNameMap
+
+}
+
+func QMIdentifier(qmPod *corev1.Pod, qmName, qmNamespace string) string {
+	if qmName != "" {
+		return qmName
+	}
+	if qmPod != nil {
+		return qmPod.ObjectMeta.Name
+	}
+
+	return ""
+}
+
+func LogDirectorySummary(dirName string, logger *slog.Logger) {
+
+	entries, err := os.ReadDir(dirName)
+	if err != nil {
+		logger.Info(fmt.Sprintf("error reading %s directory: %v", dirName, err))
+		return
+	}
+
+	dirCount := 0
+	for _, entry := range entries {
+
+		if !entry.IsDir() {
+			continue
+		}
+
+		dirCount++
+
+		entryPath := filepath.Join(dirName, entry.Name())
+		fileCount, err := GetFileCountInDirectory(entryPath)
+		if err != nil {
+			logger.Info(fmt.Sprintf("error counting files in %s directory: %v", entryPath, err))
+			continue
+		}
+		logger.Info(fmt.Sprintf("collected %d files in %s directory", fileCount, entryPath))
+
+	}
+
+	logger.Info(fmt.Sprintf("collected %d directories under %s", dirCount, dirName))
 
 }

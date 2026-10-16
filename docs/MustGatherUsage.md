@@ -78,7 +78,7 @@ Usage of mustgather:
 - &lt;qm-name&gt;-ibm-mq-service.yaml
 
 #### pods/
-- &lt;qm-name&gt;-ibm-mq-0-current-pod-log.txt
+- &lt;container-name&gt;-&lt;qm-name&gt;-ibm-mq-0-current-pod-log.txt
 - &lt;qm-name&gt;-ibm-mq-0-describe-log.txt
 - &lt;qm-name&gt;-ibm-mq-0-pod-events.txt
 - &lt;qm-name&gt;-ibm-mq-0.yaml
@@ -99,3 +99,18 @@ Usage of mustgather:
 #### configmaps/
 - &lt;mqsc-configmap&gt;.yaml
 - &lt;ini-configmap&gt;.yaml
+
+#### pdb/
+- &lt;qm-name&gt;-ibm-mq-pdb.yaml
+
+#### rbac/rolebindings/
+- &lt;rolebinding-name&gt;.yaml
+
+#### rbac/roles/
+- &lt;role-name&gt;.yaml
+
+#### rbac/clusterroles/
+- &lt;clusterrole-name&gt;.yaml
+
+#### rbac/serviceaccounts/
+- &lt;qm-name&gt;-ibm-mq.yaml
