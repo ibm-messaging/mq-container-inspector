@@ -89,7 +89,7 @@ func gatherPodsToFiles(client kubernetes.Interface, flags utils.MustGatherFlags,
 	}
 
 	// write the pods logs to their files
-	podLogsFileNameFormat := "[%s]-%s-%s-pod-log.txt"
+	podLogsFileNameFormat := "%s-%s-%s-pod-log.txt"
 	if err := pods.WritePodAllContainerLogsToFile(podLogs, podLogsFileNameFormat, podsDirectory, logger); err != nil {
 		return nil, err
 	}

@@ -147,14 +147,14 @@ func WritePodAllContainerLogsToFile(podContainerLogsMap map[string]map[string]ut
 			var filePath string
 
 			if logs.PreviousPodLogsRequest != nil {
-				filePath = utils.FormatFilePath(outputDir, fileNameFormat, containerName, podName, "previous")
+				filePath = utils.FormatFilePath(outputDir, fileNameFormat, podName, containerName, "previous")
 
 				if err := writePrevPodLogs(logs, podName, filePath, outputDir, logger); err != nil {
 					return err
 				}
 			}
 
-			filePath = utils.FormatFilePath(outputDir, fileNameFormat, containerName, podName, "current")
+			filePath = utils.FormatFilePath(outputDir, fileNameFormat, podName, containerName, "current")
 
 			if err := writeCurrentPodLogs(logs, podName, filePath, outputDir, logger); err != nil {
 				return err

@@ -205,7 +205,7 @@ func collectRolesAndClusterRoleDetails(client kubernetes.Interface, roleBindings
 			logger.Info(fmt.Sprintf("error fetching %s role: %v", name, err))
 			continue
 		}
-		roles = append(roles, role)
+		roles = append(roles, *role)
 	}
 
 	var clusterRoles []rbacv1.ClusterRole
@@ -216,7 +216,7 @@ func collectRolesAndClusterRoleDetails(client kubernetes.Interface, roleBindings
 			logger.Info(fmt.Sprintf("error fetching %s cluster role: %v", name, err))
 			continue
 		}
-		clusterRoles = append(clusterRoles, clusterRole)
+		clusterRoles = append(clusterRoles, *clusterRole)
 	}
 
 	if err := writeRolesToFiles(roles, parentDir, logger); err != nil {
