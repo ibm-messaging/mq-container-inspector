@@ -65,14 +65,17 @@ func getRoleBindingDetails(client kubernetes.Interface, namespace string, opts m
 //   - client: the Kubernetes client used to interact with the cluster.
 //   - name: the name of the Role.
 //   - namespace: the namespace in which to search for the Role.
-func GetRoleDetailsByName(client kubernetes.Interface, name, namespace string) (rbacv1.Role, error) {
+func GetRoleDetailsByName(client kubernetes.Interface, name, namespace string) (*rbacv1.Role, error) {
 
 	role, err := client.RbacV1().Roles(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("fetching %s role details in namespace %s: %w", name, namespace, err)
+	}
 
 	role.TypeMeta.APIVersion = utils.ApiVersionRbacV1
 	role.TypeMeta.Kind = utils.KindRole
 
-	return *role, err
+	return role, err
 
 }
 
@@ -81,12 +84,15 @@ func GetRoleDetailsByName(client kubernetes.Interface, name, namespace string) (
 // Parameters:
 //   - client: the Kubernetes client used to interact with the cluster.
 //   - name: the name of the ClusterRole.
-func GetClusterRoleDetailsByName(client kubernetes.Interface, name string) (rbacv1.ClusterRole, error) {
+func GetClusterRoleDetailsByName(client kubernetes.Interface, name string) (*rbacv1.ClusterRole, error) {
 
 	clusterRole, err := client.RbacV1().ClusterRoles().Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("fetching %s cluster-role detail: %w", name, err)
+	}
 
 	clusterRole.TypeMeta.APIVersion = utils.ApiVersionRbacV1
 	clusterRole.TypeMeta.Kind = utils.KindClusterRole
 
-	return *clusterRole, err
+	return clusterRole, err
 }

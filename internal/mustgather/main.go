@@ -98,7 +98,7 @@ func MustGather(cfg *rest.Config, flags utils.MustGatherFlags) error {
 
 	isPDBEnabled, err := validations.CheckIfPDBEnabled(dynamicClient, qmPod, flags.QueueManagerName, flags.QueueManagerNamespace, flags.QmContainerName)
 	if err != nil {
-		logger.Info(fmt.Sprintf("Error validating if PDB is enabled: %v", err))
+		logger.Info(fmt.Sprintf("Error determining if PDB is enabled: %v", err))
 	} else if isPDBEnabled {
 		name := utils.QMIdentifier(qmPod, flags.QueueManagerName, flags.QueueManagerNamespace)
 		logger.Info(fmt.Sprintf("PDB is enabled for %s in %s namespace", name, flags.QueueManagerNamespace))
